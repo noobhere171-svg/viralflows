@@ -1,0 +1,26 @@
+import { pgTable, uuid, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").unique().notNull(),
+  passwordHash: text("password_hash"),
+  name: text("name"),
+  avatarUrl: text("avatar_url"),
+  clerkId: text("clerk_id").unique(),
+  whatsappNumber: text("whatsapp_number"),
+  country: text("country"),
+  authProvider: text("auth_provider").default("email"),
+  accountSetupComplete: boolean("account_setup_complete").default(false),
+  plan: text("plan").default("free"),
+  planExpiresAt: timestamp("plan_expires_at"),
+  role: text("role").default("user"),
+  isLocked: boolean("is_locked").default(false),
+  lockedAt: timestamp("locked_at"),
+  stripeCustomerId: text("stripe_customer_id"),
+  emailVerified: boolean("email_verified").default(false),
+  videosUsedThisMonth: integer("videos_used_this_month").default(0),
+  videosLimit: integer("videos_limit").default(3),
+  tokenVersion: integer("token_version").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});

@@ -1,0 +1,41 @@
+import { pgTable, uuid, text, timestamp, integer, boolean, numeric } from "drizzle-orm/pg-core";
+import { users } from "./users.js";
+import { channels } from "./channels.js";
+import { sources } from "./sources.js";
+
+export const videoQueue = pgTable("video_queue", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  sourceId: uuid("source_id").references(() => sources.id),
+  targetChannelId: uuid("target_channel_id").references(() => channels.id),
+  sourceUrl: text("source_url"),
+  sourcePlatform: text("source_platform"),
+  title: text("title"),
+  description: text("description"),
+  tags: text("tags").array(),
+  thumbnailUrl: text("thumbnail_url"),
+  category: text("category"),
+  visibility: text("visibility").default("public"),
+  priority: text("priority").default("normal"),
+  scheduledAt: timestamp("scheduled_at"),
+  status: text("status").default("pending"),
+  progress: integer("progress").default(0),
+  youtubeVideoId: text("youtube_video_id"),
+  errorMessage: text("error_message"),
+  srcViews: integer("src_views").default(0),
+  srcLikes: integer("src_likes").default(0),
+  ytViews: integer("yt_views").default(0),
+  ytLikes: integer("yt_likes").default(0),
+  ytComments: integer("yt_comments").default(0),
+  ytSubsGained: integer("yt_subs_gained").default(0),
+  ytWatchTime: numeric("yt_watch_time", { precision: 10, scale: 2 }).default("0"),
+  copyrightStatus: text("copyright_status").default("clean"),
+  restrictionCountries: text("restriction_countries"),
+  healthScore: integer("health_score").default(100),
+  conversionRate: numeric("conversion_rate", { precision: 5, scale: 2 }).default("0"),
+  processingStartedAt: timestamp("processing_started_at"),
+  sourceVideoId: text("source_video_id"),
+  retryCount: integer("retry_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  uploadedAt: timestamp("uploaded_at"),
+});

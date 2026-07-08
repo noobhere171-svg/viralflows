@@ -1,0 +1,31 @@
+import { pgTable, uuid, text, timestamp, boolean, integer, jsonb } from "drizzle-orm/pg-core";
+
+export const plans = pgTable("plans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").unique().notNull(),
+  displayName: text("display_name").notNull(),
+  price: integer("price").default(0),
+  billingPeriod: text("billing_period").default("yearly"),
+  billingDays: integer("billing_days").default(365),
+  features: jsonb("features").default({
+    channels: 1,
+    sources: 2,
+    queueSize: 10,
+    dailyUploads: 3,
+    proxies: 1,
+    customProxies: 0,
+    autoRefill: true,
+    scheduledUpload: true,
+    analyticsDays: 7,
+    aiSeo: false,
+    support: "community",
+    storageMb: 500,
+  }),
+  paymentMethods: jsonb("payment_methods").default(["Bank Transfer", "JazzCash", "EasyPaisa"]),
+  bankDetails: jsonb("bank_details").default({}),
+  featureLabels: jsonb("feature_labels").default({}),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});

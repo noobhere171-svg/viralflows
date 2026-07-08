@@ -1,0 +1,23 @@
+{
+  "name": "viralflows-ai",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter @viralflows/api-server run dev\" \"pnpm --filter @viralflows/web run dev\"",
+    "dev:api": "pnpm --filter @viralflows/api-server run dev",
+    "dev:web": "pnpm --filter @viralflows/web run dev",
+    "build": "pnpm --filter @viralflows/api-server run build && pnpm --filter @viralflows/web run build",
+    "db:push": "pnpm --filter @viralflows/db run push",
+    "db:studio": "pnpm --filter @viralflows/db run studio",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.38.4",
+    "googleapis": "^140.0.0",
+    "ioredis": "^5.11.1",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.6.0"
+  }
+}
