@@ -81,7 +81,7 @@ router.get("/users/:id", async (req: AuthRequest, res) => {
       whatsappNumber: users.whatsappNumber, country: users.country,
       videosUsedThisMonth: users.videosUsedThisMonth, videosLimit: users.videosLimit,
       authProvider: users.authProvider, createdAt: users.createdAt,
-    }).from(users).where(eq(users.id, req.params.id));
+    }).from(users).where(eq(users.id, req.params.id as string));
     if (!user) return res.status(404).json({ error: "User not found" });
 
     const userChannels = (await db.select({ count: count() }).from(channels).where(eq(channels.userId, user.id)))[0]?.count || 0;
@@ -108,7 +108,7 @@ router.patch("/users/:id", async (req: AuthRequest, res) => {
       }
     }
 
-    const [updated] = await db.update(users).set(safe).where(eq(users.id, req.params.id)).returning();
+    const [updated] = await db.update(users).set(safe).where(eq(users.id, req.params.id as string)).returning();
     if (!updated) return res.status(404).json({ error: "User not found" });
     res.json({ id: updated.id, email: updated.email, plan: updated.plan, role: updated.role });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -116,7 +116,7 @@ router.patch("/users/:id", async (req: AuthRequest, res) => {
 
 router.delete("/users/:id", async (req: AuthRequest, res) => {
   try {
-    const [user] = await db.select().from(users).where(eq(users.id, req.params.id));
+    const [user] = await db.select().from(users).where(eq(users.id, req.params.id as string));
     if (!user) return res.status(404).json({ error: "User not found" });
     if (user.role === "admin") return res.status(400).json({ error: "Cannot delete admin" });
 
@@ -155,7 +155,7 @@ router.patch("/plans/:id", async (req: AuthRequest, res) => {
     const safe: Record<string, any> = {};
     for (const key of ALLOWED) { if (key in req.body) safe[key] = req.body[key]; }
     if (Object.keys(safe).length === 0) return res.status(400).json({ error: "No valid fields" });
-    const [updated] = await db.update(plans).set(safe).where(eq(plans.id, req.params.id)).returning();
+    const [updated] = await db.update(plans).set(safe).where(eq(plans.id, req.params.id as string)).returning();
     if (!updated) return res.status(404).json({ error: "Plan not found" });
     res.json(updated);
   } catch (err: any) { res.status(500).json({ error: err.message }); }

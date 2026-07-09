@@ -138,7 +138,7 @@ export async function uploadVideo(
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const res = await youtube.videos.insert({
+      const res: any = await youtube.videos.insert({
         part: ["snippet", "status"],
         requestBody: {
           snippet: {
@@ -156,7 +156,6 @@ export async function uploadVideo(
         media: {
           body: createReadStream(options.videoPath),
           mimeType,
-          mediaSize: fileSize,
         },
       });
 
