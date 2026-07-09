@@ -14,6 +14,7 @@ import { analyticsDaily } from "../../../../lib/db/src/schema/analytics-daily.js
 import { analytics } from "../../../../lib/db/src/schema/analytics.js";
 import { readJsonFromFilebase, writeJsonToFilebase, deleteFromFilebase, readTextFromFilebase, writeTextToFilebase, hasWorkspaceCookies, getWorkspaceCookiesPath } from "../lib/filebase.js";
 import { getOAuthUrl, getOAuthTokens, getChannelInfo } from "../lib/youtube.js";
+import { checkGcpProjectsLimit } from "../../../../lib/plan-limits.js";
 
 const router = Router();
 
@@ -1004,6 +1005,15 @@ router.post("/:id/gcp-credentials", async (req: AuthRequest, res) => {
     const wsId = req.params.id as string;
     const [ws] = await db.select().from(workspaces).where(eq(workspaces.id, wsId));
     if (!ws) return res.status(404).json({ error: "Workspace not found" });
+
+    // Plan enforcement: check GCP projects limit
+    const gcpCheck = await checkGcpProjectsLimit(req.userId!);
+    if (!gcpCheck.allowed) {
+      return res.status(403).json({
+        error: `GCP Projects limit reached (${gcpCheck.current}/${gcpCheck.limit}). Upgrade your plan to add more GCP projects.`,
+        limitCheck: gcpCheck,
+      });
+    }
 
     const { name, clientSecretData } = req.body;
     if (!name || !clientSecretData) return res.status(400).json({ error: "name and clientSecretData required" });

@@ -36,4 +36,5 @@ declare module "lucide-react" {
   export const ArrowUpRight: LucideIconType;
   export const CheckCircle2: LucideIconType;
   export const Settings2: LucideIconType;
+  export const GripVertical: LucideIconType;
 }

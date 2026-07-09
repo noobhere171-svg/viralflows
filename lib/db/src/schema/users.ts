@@ -20,6 +20,8 @@ export const users = pgTable("users", {
   emailVerified: boolean("email_verified").default(false),
   videosUsedThisMonth: integer("videos_used_this_month").default(0),
   videosLimit: integer("videos_limit").default(3),
+  searchCount: integer("search_count").default(0),
+  searchCountResetAt: timestamp("search_count_reset_at"),
   tokenVersion: integer("token_version").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

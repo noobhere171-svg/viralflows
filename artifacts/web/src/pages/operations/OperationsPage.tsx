@@ -47,13 +47,41 @@ export default function OperationsPage() {
     refetchInterval: 30000,
   });
 
+  const { data: planData } = useQuery<any>({
+    queryKey: ["billing-plan"],
+    queryFn: () => api.get("/billing/plan"),
+    refetchInterval: 60000,
+  });
+
+  const { data: gcpCreds = [] } = useQuery<any[]>({
+    queryKey: ["gcp-credentials"],
+    queryFn: async () => {
+      const ws = await api.get("/workspaces") as any[];
+      const allCreds: any[] = [];
+      for (const w of ws.slice(0, 5)) {
+        try {
+          const creds = await api.get(`/workspaces/${w.id}/gcp-credentials`);
+          allCreds.push(...creds);
+        } catch {}
+      }
+      return allCreds;
+    },
+  });
+
+  const { data: userProxies = [] } = useQuery<any[]>({
+    queryKey: ["proxies"],
+    queryFn: () => api.get("/proxies"),
+  });
+
   const totalChannels = channels.length;
   const activeChannels = channels.filter(c => c.authStatus === "authorized").length;
   const warningsCount = channels.filter(c => c.authStatus === "pending").length;
   const errorsCount = channels.filter(c => c.authStatus === "off" || c.authStatus === "failed").length;
   const uploadsToday = channels.reduce((s, c) => s + (c.uploadsToday || 0), 0);
-  const workspacesCount = 0;
-  const sourcesCount = 0;
+  const gcpCount = gcpCreds.length;
+  const proxyCount = userProxies.length;
+  const planFeatures = planData?.features || {};
+  const planName = planData?.plan || "free";
 
   const filteredChannels = channels.filter(ch => {
     if (!channelSearch) return true;
@@ -271,24 +299,28 @@ export default function OperationsPage() {
         {/* Plan Usage */}
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
           <h3 className="text-sm font-semibold text-white mb-3">Plan usage</h3>
-          <div className="text-lg font-bold text-zinc-500 mb-3">Free</div>
+          <div className="text-lg font-bold text-zinc-500 mb-3 capitalize">{planName}</div>
           <div className="space-y-2">
             {[
-              { label: "Active channels", value: activeChannels, limit: 2 },
-              { label: "Uploads today", value: uploadsToday, limit: 6 },
-              { label: "Sources", value: channels.length, limit: 2 },
-              { label: "GCP projects", value: workspacesCount || 1, limit: 1 },
+              { label: "GCP Projects", value: gcpCount, limit: planFeatures.gcpProjects ?? "-" },
+              { label: "Daily Searches", value: planData?.videosUsedThisMonth || 0, limit: planFeatures.dailySearches ?? "-" },
+              { label: "Proxies", value: proxyCount, limit: planFeatures.proxies ?? "-" },
             ].map((item) => {
-              const pct = Math.min((item.value / item.limit) * 100, 100);
+              const limitNum = typeof item.limit === "number" ? item.limit : -1;
+              const showLimit = limitNum === -1 ? "Unlimited" : String(limitNum);
+              const exceeded = limitNum !== -1 && item.value > limitNum;
+              const pct = limitNum !== -1 && limitNum > 0 ? Math.min((item.value / limitNum) * 100, 100) : 0;
               return (
                 <div key={item.label}>
                   <div className="flex items-center justify-between text-xs mb-0.5">
                     <span className="text-zinc-500">{item.label}</span>
-                    <span className={item.value > item.limit ? "text-red-400" : "text-zinc-400"}>{item.value} / {item.limit}</span>
+                    <span className={exceeded ? "text-red-400" : "text-zinc-400"}>{item.value} / {showLimit}</span>
                   </div>
-                  <div className="w-full bg-[#0f0f0f] rounded-full h-1">
-                    <div className={`h-1 rounded-full ${item.value > item.limit ? "bg-red-500" : "bg-violet-500"}`} style={{ width: `${pct}%` }} />
-                  </div>
+                  {limitNum !== -1 && limitNum > 0 && (
+                    <div className="w-full bg-[#0f0f0f] rounded-full h-1">
+                      <div className={`h-1 rounded-full ${exceeded ? "bg-red-500" : pct > 80 ? "bg-amber-500" : "bg-violet-500"}`} style={{ width: `${pct}%` }} />
+                    </div>
+                  )}
                 </div>
               );
             })}

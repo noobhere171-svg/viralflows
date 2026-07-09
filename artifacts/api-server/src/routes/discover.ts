@@ -4,12 +4,37 @@ import fetch from "node-fetch";
 import { fetchTikTokUserProfile, fetchTikTokUserVideos, fetchTikTokUserVideosViaYtDlp } from "../lib/tiktok.js";
 import { generateSeo } from "../lib/llm.js";
 import { withTikwmRateLimit } from "../../../../lib/rate-limiter.js";
+import db from "../../../../lib/db/src/index.js";
+import { users } from "../../../../lib/db/src/schema/users.js";
+import { eq, sql } from "drizzle-orm";
+import { getUserPlanFeatures, getSearchCount, incrementSearchCount } from "../../../../lib/plan-limits.js";
 
 const router = Router();
 router.use(requireAuth);
 
 const DEFAULT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
 const FETCH_TIMEOUT = 15000;
+
+async function checkSearchLimit(userId: string): Promise<{ allowed: boolean; current: number; limit: number }> {
+  const features = await getUserPlanFeatures(userId);
+  const limit = features?.dailySearches;
+  if (limit === undefined || limit === null || limit === -1) {
+    return { allowed: true, current: 0, limit: -1 };
+  }
+  // Reset search count if new day
+  const [user] = await db.select({
+    searchCount: users.searchCount,
+    searchCountResetAt: users.searchCountResetAt,
+  }).from(users).where(eq(users.id, userId));
+  const today = new Date();
+  const lastReset = user?.searchCountResetAt;
+  let currentCount = user?.searchCount ?? 0;
+  if (!lastReset || lastReset.getDate() !== today.getDate() || lastReset.getMonth() !== today.getMonth() || lastReset.getFullYear() !== today.getFullYear()) {
+    currentCount = 0;
+    await db.update(users).set({ searchCount: 0, searchCountResetAt: today }).where(eq(users.id, userId));
+  }
+  return { allowed: currentCount < limit, current: currentCount, limit };
+}
 
 function safeStr(v: any, fallback = ""): string {
   if (typeof v === "string") return v;
@@ -68,9 +93,21 @@ router.get("/search", async (req: AuthRequest, res) => {
   try {
     const q = req.query.q as string;
     if (!q) return res.status(400).json({ error: "Search query required" });
+
+    const limitCheck = await checkSearchLimit(req.userId!);
+    if (!limitCheck.allowed) {
+      return res.status(403).json({
+        error: `Daily search limit reached (${limitCheck.current}/${limitCheck.limit}). Upgrade your plan for more searches.`,
+        limitCheck,
+      });
+    }
+
     const data = await tikwmFetch(`https://www.tikwm.com/api/feed/search?keywords=${encodeURIComponent(q)}&count=20`);
     const items = data.data?.videos || data.data || [];
     const videos = items.map(formatVideo);
+
+    await incrementSearchCount(req.userId!);
+
     res.json(videos);
   } catch (err: any) {
     res.status(502).json({ error: err.message });
@@ -118,6 +155,14 @@ router.get("/creators", async (req: AuthRequest, res) => {
     const q = (req.query.q as string) || "";
     const searchType = (req.query.type as string) || "keyword";
     if (!q.trim()) return res.status(400).json({ error: "Search query required" });
+
+    const limitCheck = await checkSearchLimit(req.userId!);
+    if (!limitCheck.allowed) {
+      return res.status(403).json({
+        error: `Daily search limit reached (${limitCheck.current}/${limitCheck.limit}). Upgrade your plan for more searches.`,
+        limitCheck,
+      });
+    }
     const count = Math.min(Number(req.query.count) || 40, 50);
     const minFollowers = Number(req.query.minFollowers) || 0;
 
@@ -191,6 +236,8 @@ router.get("/creators", async (req: AuthRequest, res) => {
     }
 
     const filtered = minFollowers > 0 ? creators.filter(c => c.followers >= minFollowers) : creators;
+
+    await incrementSearchCount(req.userId!);
 
     res.json({
       creators: filtered,

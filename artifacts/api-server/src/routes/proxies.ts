@@ -3,6 +3,7 @@ import { requireAuth, AuthRequest } from "../middlewares/auth.js";
 import db from "../../../../lib/db/src/index.js";
 import { proxies } from "../../../../lib/db/src/schema/proxies.js";
 import { eq } from "drizzle-orm";
+import { checkProxiesLimit } from "../../../../lib/plan-limits.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -16,6 +17,13 @@ router.get("/", async (req: AuthRequest, res) => {
 
 router.post("/", async (req: AuthRequest, res) => {
   try {
+    const limitCheck = await checkProxiesLimit(req.userId!);
+    if (!limitCheck.allowed) {
+      return res.status(403).json({
+        error: `Proxy limit reached (${limitCheck.current}/${limitCheck.limit}). Upgrade your plan to add more proxies.`,
+        limitCheck,
+      });
+    }
     const { host, port, username, password, protocol } = req.body;
     const item = await db.insert(proxies).values({ userId: req.userId!, ipAddress: host, port, protocol, username, passwordEncrypted: password }).returning();
     res.status(201).json(item[0]);
@@ -24,6 +32,13 @@ router.post("/", async (req: AuthRequest, res) => {
 
 router.post("/bulk", async (req: AuthRequest, res) => {
   try {
+    const limitCheck = await checkProxiesLimit(req.userId!);
+    if (!limitCheck.allowed) {
+      return res.status(403).json({
+        error: `Proxy limit reached (${limitCheck.current}/${limitCheck.limit}). Remove existing proxies or upgrade your plan.`,
+        limitCheck,
+      });
+    }
     const { items } = req.body;
     const ALLOWED = ["ipAddress","port","protocol","username","passwordEncrypted"];
     const inserted = await db.insert(proxies).values(items.map((i: any) => {

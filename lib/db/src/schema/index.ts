@@ -21,3 +21,4 @@ export { planRequests } from "./plan-requests.js";
 export { globalProxies } from "./global-proxies.js";
 export { paymentScreenshots } from "./payment-screenshots.js";
 export { passwordResetTokens } from "./password-reset-tokens.js";
+export { featureDefinitions } from "./feature-definitions.js";

@@ -7,6 +7,7 @@ const defaultFeatureLabels: Record<string, string> = {
   dailyUploads: "Daily Uploads", proxies: "Admin Proxies", customProxies: "Custom Proxies",
   autoRefill: "Auto-Refill", scheduledUpload: "Scheduled Upload", analyticsDays: "Analytics Days",
   aiSeo: "AI SEO", support: "Support Level", storageMb: "Storage (MB)",
+  gcpProjects: "GCP Projects", dailySearches: "Daily Searches",
 };
 
 const methodFields: Record<string, { key: string; label: string }[]> = {

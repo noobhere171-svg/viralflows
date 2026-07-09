@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import db from "../../../../lib/db/src/index.js";
 import { users } from "../../../../lib/db/src/schema/users.js";
 import { plans } from "../../../../lib/db/src/schema/plans.js";
+import { featureDefinitions } from "../../../../lib/db/src/schema/feature-definitions.js";
 import { planRequests } from "../../../../lib/db/src/schema/plan-requests.js";
 import { globalProxies } from "../../../../lib/db/src/schema/global-proxies.js";
 import { channels } from "../../../../lib/db/src/schema/channels.js";
@@ -394,6 +395,53 @@ router.post("/create-admin", async (req: AuthRequest, res) => {
     }).returning();
 
     res.json({ admin: { id: admin.id, email: admin.email, name: admin.name, role: admin.role } });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Feature Definitions CRUD ───
+router.get("/feature-definitions", async (_req: AuthRequest, res) => {
+  try {
+    const list = await db.select().from(featureDefinitions).orderBy(featureDefinitions.sortOrder);
+    res.json(list);
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+router.post("/feature-definitions", async (req: AuthRequest, res) => {
+  try {
+    const { key, label, type, defaultVal, sortOrder } = req.body;
+    if (!key || !label) return res.status(400).json({ error: "key and label required" });
+    const [created] = await db.insert(featureDefinitions).values({
+      key, label, type: type || "number",
+      defaultVal: defaultVal ?? (type === "boolean" ? false : 0),
+      sortOrder: sortOrder || 0,
+    }).returning();
+    res.status(201).json(created);
+  } catch (err: any) {
+    if (err.constraint === "feature_definitions_key_unique") {
+      return res.status(409).json({ error: "Feature key already exists" });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.patch("/feature-definitions/:id", async (req: AuthRequest, res) => {
+  try {
+    const ALLOWED = ["key", "label", "type", "defaultVal", "sortOrder", "isEnforced"];
+    const safe: Record<string, any> = {};
+    for (const key of ALLOWED) { if (key in req.body) safe[key] = req.body[key]; }
+    if (Object.keys(safe).length === 0) return res.status(400).json({ error: "No valid fields" });
+    const [updated] = await db.update(featureDefinitions).set(safe).where(eq(featureDefinitions.id, req.params.id as string)).returning();
+    if (!updated) return res.status(404).json({ error: "Feature not found" });
+    res.json(updated);
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete("/feature-definitions/:id", async (req: AuthRequest, res) => {
+  try {
+    const [feat] = await db.select().from(featureDefinitions).where(eq(featureDefinitions.id, req.params.id as string));
+    if (!feat) return res.status(404).json({ error: "Feature not found" });
+    await db.delete(featureDefinitions).where(eq(featureDefinitions.id, req.params.id as string));
+    res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
