@@ -18,7 +18,7 @@ router.post("/clerk", async (req: Request, res: Response) => {
     const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
 
     if (webhookSecret && webhookSecret !== "whsec_placeholder") {
-      const { default: Svix } = await import("svix");
+      const { Svix } = await import("svix");
       const svix = new Svix(webhookSecret);
       const body = (req as any).rawBody || JSON.stringify(req.body);
       const headers = req.headers as Record<string, string>;

@@ -29,7 +29,7 @@ async function main() {
   for (const src of deadSources) {
     if (!src.sourceId || src.count <= 20) continue;
     const excess = src.count - 20;
-    console.log(`Source ${src.sourceId}: ${src.dead_letter} dead_letter, removing ${excess}...`);
+    console.log(`Source ${src.sourceId}: ${src.count} dead_letter, removing ${excess}...`);
 
     const items = await db.select({ id: videoQueue.id })
       .from(videoQueue)

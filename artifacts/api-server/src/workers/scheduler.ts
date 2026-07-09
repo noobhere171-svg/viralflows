@@ -435,7 +435,7 @@ async function processSingleSchedule(schedule: any, channel: any) {
         status: "dead_letter",
         errorMessage: `Invalid sourceUrl format (${isCdn ? "CDN" : !hasNumericId ? "non-numeric ID" : "unrecognized"}): ${queueItem.sourceUrl.slice(0, 80)}`,
       }).where(eq(videoQueue.id, queueItem.id));
-      queueItem = null;
+      queueItem = undefined;
     }
   }
 
@@ -1052,14 +1052,10 @@ async function cleanupUploadedQueue() {
       await db.delete(videoComments).where(inArray(videoComments.videoId, oldIds));
     }
 
-    const deleted = await db.delete(videoQueue)
-      .where(and(
-        sql`${videoQueue.status} IN ('uploaded', 'dead_letter', 'failed', 'cancelled')`,
-        lt(videoQueue.createdAt, cutoff)
-      ));
-    if (deleted?.rowCount && deleted.rowCount > 0) {
-      console.log(`[Scheduler] Cleaned up ${deleted.rowCount} old items (>30 days)`);
-    }
+    await db.execute(
+      sql`DELETE FROM video_queue WHERE status IN ('uploaded', 'dead_letter', 'failed', 'cancelled') AND created_at < ${cutoff}`
+    );
+    console.log(`[Scheduler] Cleaned up old items (>30 days)`);
   } catch (err: any) {
     console.error(`[Scheduler] Queue cleanup error: ${getErrorMessage(err)}`);
   }

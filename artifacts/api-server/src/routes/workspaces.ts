@@ -12,7 +12,7 @@ import { videoComments } from "../../../../lib/db/src/schema/video-comments.js";
 import { copyrightClaims } from "../../../../lib/db/src/schema/copyright-claims.js";
 import { analyticsDaily } from "../../../../lib/db/src/schema/analytics-daily.js";
 import { analytics } from "../../../../lib/db/src/schema/analytics.js";
-import { readJsonFromFilebase, writeJsonToFilebase, deleteFromFilebase } from "../lib/filebase.js";
+import { readJsonFromFilebase, writeJsonToFilebase, deleteFromFilebase, readTextFromFilebase, writeTextToFilebase, hasWorkspaceCookies, getWorkspaceCookiesPath } from "../lib/filebase.js";
 import { getOAuthUrl, getOAuthTokens, getChannelInfo } from "../lib/youtube.js";
 
 const router = Router();
@@ -463,7 +463,7 @@ router.get("/_diag/live-test-upload/:channelId", async (req, res) => {
       oauth2Client.setCredentials({ access_token: tokens.access_token, refresh_token: tokens.refresh_token });
       const youtube = google.youtube({ version: "v3", auth: oauth2Client });
 
-      const uploadRes = await youtube.videos.insert({
+      const uploadRes: any = await youtube.videos.insert({
         part: ["snippet", "status"],
         requestBody: {
           snippet: {
@@ -481,7 +481,6 @@ router.get("/_diag/live-test-upload/:channelId", async (req, res) => {
         media: {
           body: crs(testVideoPath),
           mimeType: "video/mp4",
-          mediaSize: stat.size,
         },
       });
 
@@ -499,7 +498,7 @@ router.get("/_diag/live-test-upload/:channelId", async (req, res) => {
       // Step 5: Immediately verify the video exists
       if (uploadRes.data.id) {
         try {
-          const verifyRes = await youtube.videos.list({
+          const verifyRes: any = await youtube.videos.list({
             part: ["status", "snippet"],
             id: [uploadRes.data.id],
           });
@@ -510,7 +509,6 @@ router.get("/_diag/live-test-upload/:channelId", async (req, res) => {
             title: vid?.snippet?.title,
             privacy: vid?.status?.privacyStatus,
             uploadStatus: vid?.status?.uploadStatus,
-            processingStatus: vid?.status?.processingStatus,
             failureReason: vid?.status?.failureReason,
             rejectionReason: vid?.status?.rejectionReason,
           });
@@ -1104,7 +1102,6 @@ router.post("/:id/expire-gcp/:credId", async (req: AuthRequest, res) => {
 });
 
 // ─── TikTok Cookies ───
-import { readTextFromFilebase, writeTextToFilebase, deleteFromFilebase, hasWorkspaceCookies, getWorkspaceCookiesPath } from "../lib/filebase.js";
 
 router.get("/:id/cookies", async (req: AuthRequest, res) => {
   try {

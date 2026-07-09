@@ -290,7 +290,7 @@ router.get("/health/issues", async (req: AuthRequest, res) => {
     const channelRows = chIds.length > 0
       ? await db.select({ id: channels.id, channelName: channels.channelName, workspaceId: channels.workspaceId }).from(channels).where(inArray(channels.id, chIds))
       : [];
-    const wsIds = [...new Set(channelRows.map(c => c.workspaceId).filter(Boolean))];
+    const wsIds = [...new Set(channelRows.map(c => c.workspaceId).filter(Boolean))] as string[];
     const wsRows = wsIds.length > 0
       ? await db.select({ id: workspaces.id, email: workspaces.email }).from(workspaces).where(inArray(workspaces.id, wsIds))
       : [];
@@ -372,7 +372,7 @@ router.post("/:id/sync", async (req: AuthRequest, res) => {
         queueItem.title = seo.title;
         queueItem.description = seo.description;
         queueItem.tags = seo.tags;
-        queueItem.category = seo.category;
+        queueItem.category = seo.category ?? null;
       } catch {}
 
       queueItems.push(queueItem);

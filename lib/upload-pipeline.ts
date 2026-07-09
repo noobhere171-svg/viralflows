@@ -16,7 +16,7 @@ import { uploadVideo, mapCategoryId, refreshAccessToken } from "../artifacts/api
 import { generateSeo } from "../artifacts/api-server/src/lib/llm.js";
 import { readJsonFromFilebase, writeJsonToFilebase, hasWorkspaceCookies, getWorkspaceCookiesPath } from "../artifacts/api-server/src/lib/filebase.js";
 import { triggerSourceRefill } from "../artifacts/api-server/src/workers/scheduler.js";
-import { google } from "googleapis";
+
 
 export interface UploadPipelineParams {
   queueItem: typeof videoQueue.$inferSelect;
@@ -151,6 +151,7 @@ export async function runUploadPipeline({
 
     // Token-to-channel verification: ensure this token uploads to the RIGHT YouTube channel
     try {
+      const { google } = await import("googleapis");
       const authClient = new google.auth.OAuth2(clientId, clientSecret);
       authClient.setCredentials({ access_token: tokens.access_token });
       const yt = google.youtube({ version: "v3", auth: authClient });
@@ -216,6 +217,7 @@ export async function runUploadPipeline({
     });
 
     // Post-upload verification: confirm the video actually exists AND is processing/published on YouTube
+    const { google } = await import("googleapis");
     const verifyClient = new google.auth.OAuth2(clientId, clientSecret);
     verifyClient.setCredentials({ access_token: tokens.access_token, refresh_token: tokens.refresh_token });
     const ytVerify = google.youtube({ version: "v3", auth: verifyClient });
@@ -334,10 +336,11 @@ export async function runUploadPipeline({
     await createNotification(channel.userId, "upload_complete", `Video "${item.title}" uploaded to ${channel.channelName}.`, item.id);
 
     // Trigger auto-refill for this channel's source after 30 seconds
-    if (channel.sourceId) {
+    const sourceId = channel.sourceId;
+    if (sourceId) {
       setTimeout(() => {
-        triggerSourceRefill(channel.sourceId).catch((err: any) => {
-          console.warn(`[UploadPipeline] Trigger refill failed for source ${channel.sourceId}: ${getErrorMessage(err)}`);
+        triggerSourceRefill(sourceId).catch((err: any) => {
+          console.warn(`[UploadPipeline] Trigger refill failed for source ${sourceId}: ${getErrorMessage(err)}`);
         });
       }, 30_000);
     }
