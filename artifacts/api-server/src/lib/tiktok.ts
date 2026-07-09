@@ -8,10 +8,7 @@ import { createWriteStream } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { randomUUID } from "crypto";
-import { execFile } from "child_process";
-import { promisify } from "util";
-
-const execFileAsync = promisify(execFile);
+import ytdl from "yt-dlp-exec";
 
 export interface TikTokVideo {
   id: string;
@@ -40,6 +37,11 @@ const FETCH_TIMEOUT = 15000;
 
 function sleep(ms: number) {
   return new Promise(r => setTimeout(r, ms));
+}
+
+function makeTikwmAbsolute(url: string): string {
+  if (!url || url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `https://www.tikwm.com${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 function getAgent(proxyUrl?: string): https.Agent | undefined {
@@ -85,7 +87,7 @@ export async function resolveTikTokUrl(tiktokUrl: string): Promise<string> {
         if (!response.ok) throw new Error(`tikwm HTTP ${response.status}`);
         const data = (await response.json()) as any;
         if (data.code !== 0) throw new Error(`tikwm error: ${data.msg}`);
-        const playUrl = data.data?.play || data.data?.wmplay || "";
+        const playUrl = makeTikwmAbsolute(data.data?.play || data.data?.wmplay || "");
         if (!playUrl) throw new Error("tikwm returned no play URL");
         return playUrl;
       },
@@ -122,7 +124,7 @@ export async function resolveTikTokUrl(tiktokUrl: string): Promise<string> {
         if (!response.ok) throw new Error(`tikwm-direct HTTP ${response.status}`);
         const data = (await response.json()) as any;
         if (data.code !== 0) throw new Error(`tikwm-direct error: ${data.msg}`);
-        const dl = data.data?.play || data.data?.wmplay;
+        const dl = makeTikwmAbsolute(data.data?.play || data.data?.wmplay || "");
         if (!dl) throw new Error("tikwm-direct returned no download URL");
         return dl;
       },
@@ -180,8 +182,8 @@ export async function fetchTikTokVideo(url: string, options: TikTokOptions = {})
     author: info.author?.nickname || info.unique_id || "Unknown",
     authorUrl: `https://www.tiktok.com/@${info.unique_id || "unknown"}`,
     duration: info.duration || 0,
-    playUrl: info.play || info.wmplay || "",
-    wmplayUrl: info.wmplay || info.play || "",
+    playUrl: makeTikwmAbsolute(info.play || info.wmplay || ""),
+    wmplayUrl: makeTikwmAbsolute(info.wmplay || info.play || ""),
     coverUrl: info.cover || "",
     musicUrl: info.music || "",
     playCount: info.play_count || info.views || 0,
@@ -197,22 +199,14 @@ async function downloadViaYtDlp(tiktokUrl: string, tmpPath: string, cookiesPath?
   const baseName = outTemplate.split(/[/\\]/).pop()!;
   console.log(`[TikTok] Downloading via yt-dlp: ${tiktokUrl.slice(0, 80)}...`);
   try {
-    const pythonPath = process.env.PYTHON_PATH || "C:\\Users\\Notta\\AppData\\Local\\Programs\\Python\\Python312\\python.exe";
-    const args = [
-      "-m", "yt_dlp",
-      "--no-warnings",
-      "--no-playlist",
-      "-f", "best",
-      "-o", join(outDir, `${baseName}.%(ext)s`),
-    ];
-    if (cookiesPath) {
-      args.push("--cookies", cookiesPath);
-      console.log(`[TikTok] Using cookies from: ${cookiesPath}`);
-    }
-    args.push(tiktokUrl);
-    await execFileAsync(pythonPath, args, { timeout: 120000, env: { ...process.env, PYTHONPATH: process.env.PYTHONPATH || "" } });
+    await (ytdl as any).exec(tiktokUrl, {
+      noWarnings: true,
+      noPlaylist: true,
+      format: "best",
+      output: join(outDir, `${baseName}.%(ext)s`),
+      cookies: cookiesPath,
+    });
 
-    // yt-dlp appends the actual format extension, so find the downloaded file
     const { readdir } = await import("fs/promises");
     const files = await readdir(outDir);
     const match = files.find(f => f.startsWith(baseName));
@@ -226,13 +220,11 @@ async function downloadViaYtDlp(tiktokUrl: string, tmpPath: string, cookiesPath?
     }
     console.log(`[TikTok] yt-dlp download complete: ${Math.round(info.size / 1024)}KB (${match})`);
 
-    // Rename to expected tmpPath if different
     if (actualPath !== tmpPath) {
       const { rename } = await import("fs/promises");
       await rename(actualPath, tmpPath);
     }
   } catch (err: any) {
-    // Cleanup any partial files
     try {
       const { readdir } = await import("fs/promises");
       const files = await readdir(outDir);
@@ -402,26 +394,16 @@ export async function fetchTikTokUserVideos(username: string, options: TikTokOpt
 
 export async function fetchTikTokUserVideosViaYtDlp(username: string, cookiesPath?: string): Promise<TikTokVideo[]> {
   const cleanUsername = username.replace(/^@/, "");
-  const pythonPath = process.env.PYTHON_PATH || "C:\\Users\\Notta\\AppData\\Local\\Programs\\Python\\Python312\\python.exe";
-
   console.log(`[TikTok] Fetching user videos via yt-dlp: @${cleanUsername}`);
-  const args = [
-    "-m", "yt_dlp",
-    "--flat-playlist",
-    "--dump-json",
-    "--no-warnings",
-    "--sleep-requests", "3",
-    "--socket-timeout", "60",
-    "--retries", "5",
-    "--fragment-retries", "5",
-    "--extractor-retries", "3",
-  ];
-  if (cookiesPath) {
-    args.push("--cookies", cookiesPath);
-    console.log(`[TikTok] Using cookies from: ${cookiesPath}`);
-  }
-  args.push(`https://www.tiktok.com/@${cleanUsername}`);
-  const { stdout } = await execFileAsync(pythonPath, args, { timeout: 180000 });
+  const { stdout } = await (ytdl as any).exec(`https://www.tiktok.com/@${cleanUsername}`, {
+    flatPlaylist: true,
+    dumpJson: true,
+    noWarnings: true,
+    sleepInterval: 3,
+    socketTimeout: 60,
+    retries: 5,
+    cookies: cookiesPath,
+  });
 
   const lines = stdout.trim().split("\n").filter(Boolean);
   const videos: TikTokVideo[] = [];
@@ -452,25 +434,15 @@ export async function fetchTikTokUserVideosViaYtDlp(username: string, cookiesPat
 }
 
 export async function fetchTikTokVideoViaYtDlp(url: string, cookiesPath?: string): Promise<TikTokVideo> {
-  const pythonPath = process.env.PYTHON_PATH || "C:\\Users\\Notta\\AppData\\Local\\Programs\\Python\\Python312\\python.exe";
-
   console.log(`[TikTok] Fetching video info via yt-dlp: ${url.slice(0, 60)}...`);
-  const args = [
-    "-m", "yt_dlp",
-    "--dump-json",
-    "--no-warnings",
-    "--no-playlist",
-    "--socket-timeout", "60",
-    "--retries", "5",
-  ];
-  if (cookiesPath) {
-    args.push("--cookies", cookiesPath);
-    console.log(`[TikTok] Using cookies from: ${cookiesPath}`);
-  }
-  args.push(url);
-  const { stdout } = await execFileAsync(pythonPath, args, { timeout: 120000 });
+  const data = await ytdl(url, {
+    noWarnings: true,
+    noPlaylist: true,
+    socketTimeout: 60,
+    retries: 5,
+    cookies: cookiesPath,
+  }) as any;
 
-  const data = JSON.parse(stdout.trim());
   const videoId = data.id || url.match(/video\/(\d+)/)?.[1] || randomUUID();
   const username = data.uploader_id || data.creator || data.channel || "unknown";
 
