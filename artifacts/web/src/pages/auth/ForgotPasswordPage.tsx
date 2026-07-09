@@ -4,7 +4,7 @@ import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
-export default function ForgotPasswordPage() {
+export default function ForgotPasswordPage() { // v2
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
