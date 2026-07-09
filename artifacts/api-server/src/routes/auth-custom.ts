@@ -9,7 +9,7 @@ import { requireAuth, AuthRequest } from "../middlewares/auth.js";
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || "viralflows-jwt-secret-dev-only";
 
-function generateToken(user: { id: string; email: string; authProvider: string | null; tokenVersion?: number }): string {
+function generateToken(user: { id: string; email: string; authProvider: string | null; tokenVersion?: number | null }): string {
   return jwt.sign(
     { userId: user.id, email: user.email, authProvider: user.authProvider, tokenVersion: user.tokenVersion || 0 },
     JWT_SECRET,

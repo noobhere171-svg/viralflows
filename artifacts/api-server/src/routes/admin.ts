@@ -163,10 +163,10 @@ router.patch("/plans/:id", async (req: AuthRequest, res) => {
 
 router.delete("/plans/:id", async (req: AuthRequest, res) => {
   try {
-    const [plan] = await db.select().from(plans).where(eq(plans.id, req.params.id));
+    const [plan] = await db.select().from(plans).where(eq(plans.id, req.params.id as string));
     if (!plan) return res.status(404).json({ error: "Plan not found" });
     if (plan.name === "free") return res.status(400).json({ error: "Cannot delete free plan" });
-    await db.delete(plans).where(eq(plans.id, req.params.id));
+    await db.delete(plans).where(eq(plans.id, req.params.id as string));
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -187,7 +187,7 @@ router.get("/plan-requests", async (req: AuthRequest, res) => {
 
 router.post("/plan-requests/:id/approve", async (req: AuthRequest, res) => {
   try {
-    const [pr] = await db.select().from(planRequests).where(eq(planRequests.id, req.params.id));
+    const [pr] = await db.select().from(planRequests).where(eq(planRequests.id, req.params.id as string));
     if (!pr) return res.status(404).json({ error: "Request not found" });
 
     // Get plan features for limits
@@ -203,7 +203,7 @@ router.post("/plan-requests/:id/approve", async (req: AuthRequest, res) => {
       status: "approved",
       adminNote: req.body.adminNote || null,
       updatedAt: new Date(),
-    }).where(eq(planRequests.id, req.params.id));
+    }).where(eq(planRequests.id, req.params.id as string));
 
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -211,14 +211,14 @@ router.post("/plan-requests/:id/approve", async (req: AuthRequest, res) => {
 
 router.post("/plan-requests/:id/reject", async (req: AuthRequest, res) => {
   try {
-    const [pr] = await db.select().from(planRequests).where(eq(planRequests.id, req.params.id));
+    const [pr] = await db.select().from(planRequests).where(eq(planRequests.id, req.params.id as string));
     if (!pr) return res.status(404).json({ error: "Request not found" });
 
     await db.update(planRequests).set({
       status: "rejected",
       adminNote: req.body.adminNote || null,
       updatedAt: new Date(),
-    }).where(eq(planRequests.id, req.params.id));
+    }).where(eq(planRequests.id, req.params.id as string));
 
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -269,7 +269,7 @@ router.patch("/proxies/:id", async (req: AuthRequest, res) => {
     const safe: Record<string, any> = {};
     for (const key of ALLOWED) { if (key in req.body) safe[key] = req.body[key]; }
     if (Object.keys(safe).length === 0) return res.status(400).json({ error: "No valid fields" });
-    const [updated] = await db.update(globalProxies).set(safe).where(eq(globalProxies.id, req.params.id)).returning();
+    const [updated] = await db.update(globalProxies).set(safe).where(eq(globalProxies.id, req.params.id as string)).returning();
     if (!updated) return res.status(404).json({ error: "Proxy not found" });
     res.json(updated);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -277,7 +277,7 @@ router.patch("/proxies/:id", async (req: AuthRequest, res) => {
 
 router.delete("/proxies/:id", async (req: AuthRequest, res) => {
   try {
-    await db.delete(globalProxies).where(eq(globalProxies.id, req.params.id));
+    await db.delete(globalProxies).where(eq(globalProxies.id, req.params.id as string));
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
@@ -285,17 +285,17 @@ router.delete("/proxies/:id", async (req: AuthRequest, res) => {
 // ─── Lock/Unlock Users ───
 router.post("/users/:id/lock", async (req: AuthRequest, res) => {
   try {
-    const [user] = await db.select().from(users).where(eq(users.id, req.params.id));
+    const [user] = await db.select().from(users).where(eq(users.id, req.params.id as string));
     if (!user) return res.status(404).json({ error: "User not found" });
     if (user.role === "admin") return res.status(400).json({ error: "Cannot lock admin" });
-    await db.update(users).set({ isLocked: true, lockedAt: new Date() }).where(eq(users.id, req.params.id));
+    await db.update(users).set({ isLocked: true, lockedAt: new Date() }).where(eq(users.id, req.params.id as string));
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
 router.post("/users/:id/unlock", async (req: AuthRequest, res) => {
   try {
-    await db.update(users).set({ isLocked: false, lockedAt: null }).where(eq(users.id, req.params.id));
+    await db.update(users).set({ isLocked: false, lockedAt: null }).where(eq(users.id, req.params.id as string));
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
