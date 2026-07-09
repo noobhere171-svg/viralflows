@@ -151,7 +151,7 @@ export default function SelectPlanPage() {
                       <span className="text-zinc-300">
                         {labels[key] || key.replace(/([A-Z])/g, " $1").replace(/^./, (s: string) => s.toUpperCase())}:{" "}
                         <span className="text-white font-medium">
-                          {typeof val === "boolean" ? (val ? "Yes" : "No") : val === 999999 ? "Unlimited" : val}
+                          {typeof val === "boolean" ? (val ? "Yes" : "No") : val === 999999 ? "Unlimited" : String(val)}
                         </span>
                       </span>
                     </div>

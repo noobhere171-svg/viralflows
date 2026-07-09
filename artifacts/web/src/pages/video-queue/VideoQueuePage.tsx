@@ -115,7 +115,7 @@ function SourcePreviews({ sources }: { sources: Source[] }) {
       const result: Record<string, any[]> = {};
       for (const src of sources) {
         if (cancelled) return;
-        const prevSrc = result[Object.keys(result).at(-1) ?? ""];
+        const prevSrc = result[Object.keys(result)[Object.keys(result).length - 1] ?? ""];
         if (prevSrc !== undefined) await new Promise(r => setTimeout(r, 1500));
         try {
           const vids = await api.get<any[]>(`/sources/${src.id}/videos`);

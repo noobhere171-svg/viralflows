@@ -170,7 +170,7 @@ export default function BillingPage() {
                 {Object.entries(features).slice(0, 8).map(([key, val]) => (
                   <div key={key} className="flex items-center gap-2">
                     <Check size={14} className="text-green-400 shrink-0" />
-                    <span className="text-zinc-300">{fLabels[key] || key}: <span className="text-white font-medium">{typeof val === "boolean" ? (val ? "Yes" : "No") : val === 999999 ? "Unlimited" : val}</span></span>
+                    <span className="text-zinc-300">{fLabels[key] || key}: <span className="text-white font-medium">{typeof val === "boolean" ? (val ? "Yes" : "No") : val === 999999 ? "Unlimited" : String(val)}</span></span>
                   </div>
                 ))}
               </div>
