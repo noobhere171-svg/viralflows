@@ -713,7 +713,7 @@ router.get("/_diag/queue-by-channel", async (_req, res) => {
         cnt: sql<number>`count(*)::int`,
       }).from(videoQueue).where(eq(videoQueue.targetChannelId, ch.id)).groupBy(videoQueue.status);
       const map: Record<string, number> = {};
-      for (const c of counts) map[c.status] = c.cnt;
+      for (const c of counts) map[c.status ?? "unknown"] = c.cnt;
       result.push({ name: ch.channelName, authStatus: ch.authStatus, pending: map["pending"] || 0, uploaded: map["uploaded"] || 0, deadLetter: map["dead_letter"] || 0, failed: map["failed"] || 0 });
     }
     result.sort((a, b) => b.pending - a.pending);

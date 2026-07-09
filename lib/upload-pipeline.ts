@@ -151,6 +151,7 @@ export async function runUploadPipeline({
 
     // Token-to-channel verification: ensure this token uploads to the RIGHT YouTube channel
     try {
+      // @ts-ignore
       const { google } = await import("googleapis");
       const authClient = new google.auth.OAuth2(clientId, clientSecret);
       authClient.setCredentials({ access_token: tokens.access_token });
@@ -217,6 +218,7 @@ export async function runUploadPipeline({
     });
 
     // Post-upload verification: confirm the video actually exists AND is processing/published on YouTube
+    // @ts-ignore
     const { google } = await import("googleapis");
     const verifyClient = new google.auth.OAuth2(clientId, clientSecret);
     verifyClient.setCredentials({ access_token: tokens.access_token, refresh_token: tokens.refresh_token });

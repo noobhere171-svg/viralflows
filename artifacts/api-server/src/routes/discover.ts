@@ -81,8 +81,8 @@ router.get("/user/:username", async (req: AuthRequest, res) => {
   try {
     const username = req.params.username;
     const [profile, videos] = await Promise.all([
-      fetchTikTokUserProfile(username),
-      fetchTikTokUserVideosViaYtDlp(username).catch(() => fetchTikTokUserVideos(username)),
+      fetchTikTokUserProfile(username as string),
+      fetchTikTokUserVideosViaYtDlp(username as string).catch(() => fetchTikTokUserVideos(username as string)),
     ]);
     res.json({ profile, videos: videos.map((v) => ({
       id: v.id,
@@ -187,7 +187,7 @@ router.get("/creators", async (req: AuthRequest, res) => {
 
     // Calculate engagement
     for (const c of creators) {
-      c.engagementScore = c.videos > 0 ? Number(((c.followers + c.likes) / Math.max(c.videos, 1)).toFixed(1)) : 0;
+      (c as any).engagementScore = c.videos > 0 ? Number(((c.followers + c.likes) / Math.max(c.videos, 1)).toFixed(1)) : 0;
     }
 
     const filtered = minFollowers > 0 ? creators.filter(c => c.followers >= minFollowers) : creators;
@@ -206,8 +206,8 @@ router.get("/creators", async (req: AuthRequest, res) => {
 
 router.get("/creators/:username", async (req: AuthRequest, res) => {
   try {
-    const profile = await fetchTikTokUserProfile(req.params.username);
-    const videos = await fetchTikTokUserVideosViaYtDlp(req.params.username).catch(() => fetchTikTokUserVideos(req.params.username));
+    const profile = await fetchTikTokUserProfile(req.params.username as string);
+    const videos = await fetchTikTokUserVideosViaYtDlp(req.params.username as string).catch(() => fetchTikTokUserVideos(req.params.username as string));
     const engagementScore = profile.videos > 0 ? Number(((profile.followers + profile.likes) / profile.videos).toFixed(1)) : 0;
     res.json({ profile: { ...profile, engagementScore }, videos: videos.slice(0, 12) });
   } catch (err: any) {

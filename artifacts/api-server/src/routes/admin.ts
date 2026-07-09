@@ -319,7 +319,7 @@ router.get("/payments", async (req: AuthRequest, res) => {
 
 router.post("/payments/:id/approve", async (req: AuthRequest, res) => {
   try {
-    const [ps] = await db.select().from(paymentScreenshots).where(eq(paymentScreenshots.id, req.params.id));
+    const [ps] = await db.select().from(paymentScreenshots).where(eq(paymentScreenshots.id, req.params.id as string));
     if (!ps) return res.status(404).json({ error: "Payment not found" });
 
     const [plan] = await db.select().from(plans).where(eq(plans.name, ps.requestedPlan));
@@ -337,7 +337,7 @@ router.post("/payments/:id/approve", async (req: AuthRequest, res) => {
     await db.update(paymentScreenshots).set({
       status: "approved", adminNote: req.body.adminNote || null, reviewedBy: req.userId,
       updatedAt: new Date(),
-    }).where(eq(paymentScreenshots.id, req.params.id));
+    }).where(eq(paymentScreenshots.id, req.params.id as string));
 
     await db.delete(planRequests).where(and(eq(planRequests.userId, ps.userId), eq(planRequests.status, "pending")));
 
@@ -350,7 +350,7 @@ router.post("/payments/:id/reject", async (req: AuthRequest, res) => {
     await db.update(paymentScreenshots).set({
       status: "rejected", adminNote: req.body.adminNote || null, reviewedBy: req.userId,
       updatedAt: new Date(),
-    }).where(eq(paymentScreenshots.id, req.params.id));
+    }).where(eq(paymentScreenshots.id, req.params.id as string));
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });

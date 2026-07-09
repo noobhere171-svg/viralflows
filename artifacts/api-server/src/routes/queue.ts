@@ -25,7 +25,7 @@ router.get("/", async (req: AuthRequest, res) => {
     if (sourceId) conditions.push(eq(videoQueue.sourceId, sourceId as string));
 
     if (pageStr) {
-      const page = Math.max(1, parseInt(pageStr, 10) || 1);
+      const page = Math.max(1, parseInt(pageStr as string, 10) || 1);
       const limit = 50;
       const list = await db.select().from(videoQueue)
         .where(and(...conditions))
@@ -215,7 +215,7 @@ router.get("/count", async (req: AuthRequest, res) => {
     let total = 0;
     const counts: Record<string, number> = {};
     for (const r of rows) {
-      counts[r.status] = Number(r.count);
+      counts[r.status ?? "unknown"] = Number(r.count);
       total += Number(r.count);
     }
     res.json({

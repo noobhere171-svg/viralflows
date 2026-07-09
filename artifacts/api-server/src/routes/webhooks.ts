@@ -18,11 +18,11 @@ router.post("/clerk", async (req: Request, res: Response) => {
     const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
 
     if (webhookSecret && webhookSecret !== "whsec_placeholder") {
-      const { Svix } = await import("svix");
-      const svix = new Svix(webhookSecret);
+      const { Webhook } = await import("svix");
+      const wh = new Webhook(webhookSecret);
       const body = (req as any).rawBody || JSON.stringify(req.body);
       const headers = req.headers as Record<string, string>;
-      svix.webhooks.verify(body, headers);
+      wh.verify(body, headers);
     }
 
     const { type, data } = req.body;

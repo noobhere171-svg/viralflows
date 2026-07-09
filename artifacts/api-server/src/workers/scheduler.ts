@@ -423,7 +423,7 @@ async function processSingleSchedule(schedule: any, channel: any) {
     console.log(`[Scheduler] Schedule ${schedule.id}: source ${source.accountHandle} recovered from error to active`);
   }
 
-  let queueItem = await findOldestPending(channel.id);
+  let queueItem: typeof videoQueue.$inferSelect | undefined = await findOldestPending(channel.id);
 
   if (queueItem && queueItem.sourceUrl) {
     const hasNumericId = extractTikTokId(queueItem.sourceUrl) !== null;

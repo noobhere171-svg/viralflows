@@ -114,8 +114,6 @@ router.post("/request-upgrade", async (req: AuthRequest, res) => {
       const [pr] = await db.insert(planRequests).values({
         userId: req.userId!,
         requestedPlan,
-        paymentMethod,
-        screenshotUrl: screenshotUrl || null,
       }).returning();
 
       return res.status(201).json({ success: true, payment: ps, request: pr });
@@ -129,7 +127,6 @@ router.post("/request-upgrade", async (req: AuthRequest, res) => {
     const [created] = await db.insert(planRequests).values({
       userId: req.userId!,
       requestedPlan,
-      paymentMethod: paymentMethod || null,
     }).returning();
 
     res.status(201).json({ success: true, request: created });

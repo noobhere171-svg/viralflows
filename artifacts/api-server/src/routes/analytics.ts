@@ -104,14 +104,14 @@ router.get("/overview", async (req: AuthRequest, res) => {
     }
 
     const trendingVideos = [...userVideos]
-      .sort((a: any, b: any) => (parseInt(b.ytViews) || 0) - (parseInt(a.ytViews) || 0))
+      .sort((a: any, b: any) => (Number(b.ytViews ?? 0) || 0) - (Number(a.ytViews ?? 0) || 0))
       .slice(0, 5)
       .map((v: any) => ({
         id: v.id,
         title: v.title,
         channel: userChannels.find((c: any) => c.id === v.targetChannelId)?.channelName || "Unknown",
-        ytViews: parseInt(v.ytViews) || 0,
-        ytLikes: parseInt(v.ytLikes) || 0,
+        ytViews: Number(v.ytViews ?? 0) || 0,
+        ytLikes: Number(v.ytLikes ?? 0) || 0,
         youtubeVideoId: v.youtubeVideoId,
       }));
 
@@ -123,10 +123,10 @@ router.get("/overview", async (req: AuthRequest, res) => {
     const bestUploadTimes: { day: string; hour: number; avgViews: number }[] = [];
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     for (const v of userVideos) {
-      const d = new Date(v.createdAt);
+      const d = new Date(v.createdAt ?? new Date());
       const day = dayNames[d.getDay()];
       const hour = d.getHours();
-      const views = parseInt(v.ytViews) || 0;
+      const views = Number(v.ytViews ?? 0) || 0;
       bestUploadTimes.push({ day, hour, avgViews: views });
     }
     const aggregated: Record<string, { sum: number; count: number }> = {};
@@ -276,7 +276,7 @@ router.get("/sources", async (req: AuthRequest, res) => {
         srcViews: 0,
         ytViews: sumField(srcVids, "ytViews"),
         bestVideoTitle: best?.title || "",
-        bestVideoViews: parseInt(best?.ytViews) || 0,
+        bestVideoViews: Number(best?.ytViews ?? 0) || 0,
         bestVideoYoutubeId: best?.youtubeVideoId || "",
       };
     }).filter(Boolean);
@@ -358,7 +358,7 @@ router.post("/comments/:id/reply", async (req: AuthRequest, res) => {
     const { replyText } = req.body;
     if (!replyText) return res.status(400).json({ error: "replyText is required" });
 
-    const comment = await db.select().from(videoComments).where(eq(videoComments.id, commentId)).then(r => r[0]);
+    const comment = await db.select().from(videoComments).where(eq(videoComments.id, commentId as string)).then(r => r[0]);
     if (!comment) return res.status(404).json({ error: "Comment not found" });
 
     const ch = await db.select().from(channels).where(eq(channels.id, comment.channelId!)).then(r => r[0]);
@@ -386,7 +386,7 @@ router.post("/comments/:id/reply", async (req: AuthRequest, res) => {
       },
     });
 
-    await db.update(videoComments).set({ replyText, repliedAt: new Date() }).where(eq(videoComments.id, commentId));
+    await db.update(videoComments).set({ replyText, repliedAt: new Date() }).where(eq(videoComments.id, commentId as string));
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });

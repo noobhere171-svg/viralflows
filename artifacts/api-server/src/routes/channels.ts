@@ -296,8 +296,8 @@ router.get("/auth/issues", async (req: AuthRequest, res) => {
     }).from(channels)
       .where(and(eq(channels.userId, req.userId!), eq(channels.authStatus, "failed")));
 
-    const wsIds = [...new Set(list.map(ch => ch.workspaceId).filter(Boolean))];
-    const credIds = [...new Set(list.map(ch => ch.gcpCredentialId).filter(Boolean))];
+    const wsIds = [...new Set(list.map(ch => ch.workspaceId).filter(Boolean))] as string[];
+    const credIds = [...new Set(list.map(ch => ch.gcpCredentialId).filter(Boolean))] as string[];
 
     const wsList = wsIds.length > 0
       ? await db.select({ id: workspaces.id, email: workspaces.email }).from(workspaces).where(inArray(workspaces.id, wsIds))

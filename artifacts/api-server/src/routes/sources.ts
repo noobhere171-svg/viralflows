@@ -127,7 +127,7 @@ router.post("/:id/queue-selected", async (req: AuthRequest, res) => {
         queueItem.title = seo.title;
         queueItem.description = seo.description;
         queueItem.tags = seo.tags;
-        queueItem.category = seo.category;
+        queueItem.category = seo.category ?? null;
       } catch {}
 
       queueItems.push(queueItem);
@@ -253,7 +253,7 @@ router.post("/:id/refill", async (req: AuthRequest, res) => {
         item.title = seo.title;
         item.description = seo.description;
         item.tags = seo.tags;
-        item.category = seo.category;
+        item.category = seo.category ?? null;
       } catch {}
 
       queueItems.push(item);
@@ -286,7 +286,7 @@ router.get("/health/issues", async (req: AuthRequest, res) => {
     }).from(sources).where(
       and(eq(sources.userId, req.userId!), sql`${sources.status} NOT IN ('active', 'pending')`)
     );
-    const chIds = list.map(s => s.linkedChannelId).filter(Boolean);
+    const chIds = list.map(s => s.linkedChannelId).filter(Boolean) as string[];
     const channelRows = chIds.length > 0
       ? await db.select({ id: channels.id, channelName: channels.channelName, workspaceId: channels.workspaceId }).from(channels).where(inArray(channels.id, chIds))
       : [];
@@ -375,17 +375,17 @@ router.post("/:id/sync", async (req: AuthRequest, res) => {
         queueItem.category = seo.category ?? null;
       } catch {}
 
-      queueItems.push(queueItem);
-    }
+        queueItems.push(queueItem);
+      }
 
-    await db.insert(operations).values({
-      userId: src.userId,
-      jobType: "source_sync",
-      status: "completed",
-      relatedEntityType: "source",
-      relatedEntityId: src.id,
-      logs: { videosFound: videos.length },
-    });
+      await db.insert(operations).values({
+        userId: src.userId,
+        jobType: "source_sync",
+        status: "completed",
+        relatedEntityType: "source",
+        relatedEntityId: src.id,
+        logs: { videosFound: videos.length },
+      });
 
     res.json({ success: true, videosFound: videos.length, queueItems });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
