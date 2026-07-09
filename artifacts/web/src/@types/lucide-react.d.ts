@@ -9,6 +9,7 @@ declare module "lucide-react" {
   type LucideIconType = ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
 
   export const ArrowLeft: LucideIconType;
+  export const Loader2: LucideIconType;
   export const Building2: LucideIconType;
   export const CheckCheck: LucideIconType;
   export const ChevronDown: LucideIconType;
