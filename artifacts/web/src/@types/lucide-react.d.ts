@@ -33,5 +33,6 @@ declare module "lucide-react" {
   export const Edit2: LucideIconType;
   export const Lock: LucideIconType;
   export const ArrowUpRight: LucideIconType;
+  export const CheckCircle2: LucideIconType;
   export const Settings2: LucideIconType;
 }
