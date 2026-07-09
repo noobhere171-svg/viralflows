@@ -47,6 +47,9 @@ export default function AdminPlans() {
     const def: Record<string, any> = {};
     for (const f of featureDefs) {
       def[f.key] = f.defaultVal ?? (f.type === "boolean" ? false : 0);
+      if (f.isEnforced) {
+        def[`_enforce_${f.key}`] = true;
+      }
     }
     return def;
   };
@@ -54,7 +57,7 @@ export default function AdminPlans() {
   const getDefaultLabels = () => {
     const labels: Record<string, string> = {};
     for (const f of featureDefs) {
-      labels[f.key] = f.label;
+      if (!f.key.startsWith("_")) labels[f.key] = f.label;
     }
     return labels;
   };
@@ -99,6 +102,7 @@ export default function AdminPlans() {
   const deleteFeatureFromPlan = (key: string) => {
     const features = { ...editing.features };
     delete features[key];
+    delete features[`_enforce_${key}`];
     const labels = { ...editing.featureLabels };
     delete labels[key];
     setEditing({ ...editing, features, featureLabels: labels });
@@ -107,9 +111,16 @@ export default function AdminPlans() {
   const addFeatureToPlan = (featKey: string) => {
     if (editing.features[featKey] !== undefined) return;
     const def = featureDefs.find(f => f.key === featKey);
+    const features: Record<string, any> = {
+      ...editing.features,
+      [featKey]: def?.defaultVal ?? (def?.type === "boolean" ? false : 0),
+    };
+    if (def?.isEnforced) {
+      features[`_enforce_${featKey}`] = true;
+    }
     setEditing({
       ...editing,
-      features: { ...editing.features, [featKey]: def?.defaultVal ?? (def?.type === "boolean" ? false : 0) },
+      features,
       featureLabels: { ...editing.featureLabels, [featKey]: def?.label || featKey },
     });
   };
@@ -180,7 +191,7 @@ export default function AdminPlans() {
                 {plan.price > 0 && <span className="text-sm text-zinc-400 font-normal">/{plan.billingPeriod}</span>}
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {Object.entries(features).map(([key, val]) => (
+                {Object.entries(features).filter(([key]) => !key.startsWith("_")).map(([key, val]) => (
                   <div key={key} className="flex justify-between">
                     <span className="text-zinc-400">{fLabels[key] || key}</span>
                     <span className="text-white font-medium">{typeof val === "boolean" ? (val ? "Yes" : "No") : val === 999999 ? "Unlimited" : val === 999 ? "Full" : String(val)}</span>
@@ -272,7 +283,14 @@ export default function AdminPlans() {
                           className="w-24 px-2 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-white text-sm text-right"
                           placeholder="Unlimited" />
                       )}
-                      {def.isEnforced && <span className="text-amber-400 text-xs font-bold" title="Enforced by backend">⚠</span>}
+                      {def.isEnforced && (
+                        <label className="flex items-center gap-1 text-xs text-zinc-500 cursor-pointer">
+                          <input type="checkbox" checked={editing.features?.[`_enforce_${def.key}`] !== false}
+                            onChange={(e) => updateFeature(`_enforce_${def.key}`, e.target.checked)}
+                            className="w-3 h-3" />
+                          Enforce
+                        </label>
+                      )}
                       <button onClick={() => deleteFeatureFromPlan(def.key)}
                         className="text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Trash2 size={12} />

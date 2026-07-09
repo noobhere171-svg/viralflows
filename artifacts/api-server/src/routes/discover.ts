@@ -17,6 +17,10 @@ const FETCH_TIMEOUT = 15000;
 
 async function checkSearchLimit(userId: string): Promise<{ allowed: boolean; current: number; limit: number }> {
   const features = await getUserPlanFeatures(userId);
+  const enforce = features?._enforce_dailySearches;
+  if (enforce === false) {
+    return { allowed: true, current: 0, limit: -1 };
+  }
   const limit = features?.dailySearches;
   if (limit === undefined || limit === null || limit === -1) {
     return { allowed: true, current: 0, limit: -1 };

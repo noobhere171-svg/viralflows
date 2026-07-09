@@ -21,6 +21,11 @@ export async function checkCountLimit(
   getCurrentCount: () => Promise<number>,
 ): Promise<LimitCheck> {
   const features = await getUserPlanFeatures(userId);
+  const enforceKey = `_enforce_${featureKey}`;
+  const enforce = features?.[enforceKey];
+  if (enforce === false) {
+    return { allowed: true, current: 0, limit: -1 };
+  }
   const limit = features?.[featureKey];
   if (limit === undefined || limit === null || limit === -1) {
     return { allowed: true, current: 0, limit: -1 };
