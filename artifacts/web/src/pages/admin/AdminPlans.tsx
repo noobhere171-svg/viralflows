@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Edit2, Trash2, X, Save, GripVertical } from "lucide-react";
+import { Plus, Edit2, Trash2, X, Save } from "lucide-react";
 import api from "../../lib/api";
 
 const methodFields: Record<string, { key: string; label: string }[]> = {
@@ -34,20 +34,12 @@ export default function AdminPlans() {
   const [featureDefs, setFeatureDefs] = useState<any[]>([]);
   const [editing, setEditing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showAddFeature, setShowAddFeature] = useState(false);
-  const [newFeature, setNewFeature] = useState({ key: "", label: "", type: "number", defaultVal: 0 });
 
   const fetchData = async () => {
-    try {
-      const [p, f] = await Promise.all([
-        api.get("/admin/plans"),
-        api.get("/admin/feature-definitions"),
-      ]);
-      setPlans(p);
-      setFeatureDefs(f);
-    } catch {} finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    try { const p = await api.get("/admin/plans"); setPlans(p); } catch {}
+    try { const f = await api.get("/admin/feature-definitions"); setFeatureDefs(f); } catch {}
+    setLoading(false);
   };
   useEffect(() => { fetchData(); }, []);
 
@@ -90,7 +82,7 @@ export default function AdminPlans() {
     fetchData();
   };
 
-  const handleDeletePlan = async (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm("Delete this plan?")) return;
     await api.delete(`/admin/plans/${id}`);
     fetchData();
@@ -141,42 +133,6 @@ export default function AdminPlans() {
     setEditing({ ...editing, paymentMethods: editing.paymentMethods.filter((m: string) => m !== method) });
   };
 
-  // Feature definition CRUD
-  const handleAddFeatureDef = async () => {
-    if (!newFeature.key || !newFeature.label) return;
-    try {
-      await api.post("/admin/feature-definitions", {
-        key: newFeature.key,
-        label: newFeature.label,
-        type: newFeature.type,
-        defaultVal: newFeature.type === "boolean" ? false : Number(newFeature.defaultVal) || 0,
-        sortOrder: featureDefs.length,
-      });
-      setShowAddFeature(false);
-      setNewFeature({ key: "", label: "", type: "number", defaultVal: 0 });
-      fetchData();
-    } catch (e: any) {
-      alert(e?.error || "Failed to add feature");
-    }
-  };
-
-  const handleRenameFeatureDef = async (id: string, label: string) => {
-    try {
-      await api.patch(`/admin/feature-definitions/${id}`, { label });
-      fetchData();
-    } catch {}
-  };
-
-  const handleDeleteFeatureDef = async (id: string, key: string) => {
-    if (!confirm(`Delete feature "${key}" from ALL plans?`)) return;
-    try {
-      await api.delete(`/admin/feature-definitions/${id}`);
-      fetchData();
-    } catch {}
-  };
-
-  const allowedMethods = ALL_METHODS;
-
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-pulse text-violet-500 font-bold text-xl">Loading...</div></div>;
 
   return (
@@ -196,38 +152,10 @@ export default function AdminPlans() {
         </button>
       </div>
 
-      {/* Feature Definitions Bar */}
-      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-sm font-semibold text-white">Feature Definitions</h2>
-          <button onClick={() => setShowAddFeature(true)}
-            className="flex items-center gap-1 px-3 py-1 bg-violet-600/20 text-violet-400 rounded text-xs hover:bg-violet-600/30">
-            <Plus size={12} /> Add Feature
-          </button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {featureDefs.map((f) => (
-            <div key={f.id} className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-[#0f0f0f] border border-[#2a2a2a]">
-              <span className="text-violet-400 font-mono">{f.key}</span>
-              <span className="text-zinc-500">=</span>
-              <span className="text-white">{f.label}</span>
-              <span className={`px-1 rounded ${f.type === "boolean" ? "bg-blue-500/20 text-blue-400" : "bg-green-500/20 text-green-400"}`}>{f.type}</span>
-              {f.isEnforced && <span className="text-amber-400 font-bold">⚠</span>}
-              <button onClick={() => {
-                const newLabel = prompt("Rename feature label:", f.label);
-                if (newLabel && newLabel !== f.label) handleRenameFeatureDef(f.id, newLabel);
-              }} className="text-zinc-500 hover:text-white ml-1"><Edit2 size={10} /></button>
-              <button onClick={() => handleDeleteFeatureDef(f.id, f.key)} className="text-zinc-500 hover:text-red-400"><Trash2 size={10} /></button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {plans.map((plan) => {
           const features = (typeof plan.features === "string" ? JSON.parse(plan.features) : plan.features) || {};
-          const fLabels = (typeof plan.featureLabels === "string" ? JSON.parse(plan.featureLabels) : plan.featureLabels) || {};
+          const fLabels = (typeof plan.featureLabels === "string" ? JSON.parse(plan.featureLabels) : plan.featureLabels) || getDefaultLabels();
           const pMethods = (typeof plan.paymentMethods === "string" ? JSON.parse(plan.paymentMethods) : plan.paymentMethods) || [];
           return (
             <div key={plan.id} className={`bg-[#1a1a1a] border rounded-xl p-5 ${plan.isActive ? "border-[#2a2a2a]" : "border-red-500/30 opacity-60"}`}>
@@ -244,7 +172,7 @@ export default function AdminPlans() {
                     paymentMethods: typeof plan.paymentMethods === "string" ? JSON.parse(plan.paymentMethods) : (plan.paymentMethods || []),
                     bankDetails: typeof plan.bankDetails === "string" ? JSON.parse(plan.bankDetails) : (plan.bankDetails || {}),
                   })} className="text-zinc-400 hover:text-white"><Edit2 size={14} /></button>
-                  <button onClick={() => handleDeletePlan(plan.id)} className="text-zinc-400 hover:text-red-400"><Trash2 size={14} /></button>
+                  <button onClick={() => handleDelete(plan.id)} className="text-zinc-400 hover:text-red-400"><Trash2 size={14} /></button>
                 </div>
               </div>
               <div className="text-3xl font-bold text-white mb-3">
@@ -252,18 +180,12 @@ export default function AdminPlans() {
                 {plan.price > 0 && <span className="text-sm text-zinc-400 font-normal">/{plan.billingPeriod}</span>}
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                {featureDefs.map((def) => {
-                  const val = features[def.key];
-                  if (val === undefined) return null;
-                  return (
-                    <div key={def.key} className="flex justify-between">
-                      <span className="text-zinc-400">{fLabels[def.key] || def.label}</span>
-                      <span className={`font-medium ${def.isEnforced ? "text-amber-400" : "text-white"}`}>
-                        {typeof val === "boolean" ? (val ? "Yes" : "No") : val === -1 ? "Unlimited" : val === 999999 ? "Unlimited" : val === 999 ? "Full" : String(val)}
-                      </span>
-                    </div>
-                  );
-                })}
+                {Object.entries(features).map(([key, val]) => (
+                  <div key={key} className="flex justify-between">
+                    <span className="text-zinc-400">{fLabels[key] || key}</span>
+                    <span className="text-white font-medium">{typeof val === "boolean" ? (val ? "Yes" : "No") : val === 999999 ? "Unlimited" : val === 999 ? "Full" : String(val)}</span>
+                  </div>
+                ))}
               </div>
               {pMethods.length > 0 && (
                 <div className="mt-3 text-xs text-zinc-500">
@@ -278,7 +200,6 @@ export default function AdminPlans() {
         })}
       </div>
 
-      {/* Edit Plan Modal */}
       {editing && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setEditing(null)}>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 w-full max-w-2xl max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -320,7 +241,6 @@ export default function AdminPlans() {
                 </div>
               </div>
 
-              {/* Dynamic Features Editor */}
               <div className="border-t border-[#2a2a2a] pt-3">
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="text-white text-sm font-medium">Features (click label to rename)</h4>
@@ -338,7 +258,6 @@ export default function AdminPlans() {
                   if (val === undefined) return null;
                   return (
                     <div key={def.key} className="flex items-center gap-2 py-1 group">
-                      <span className="text-zinc-600 text-xs cursor-move"><GripVertical size={12} /></span>
                       <input value={editing.featureLabels?.[def.key] || def.label}
                         onChange={(e) => updateFeatureLabel(def.key, e.target.value)}
                         className="w-1/3 px-2 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-violet-400 text-sm" placeholder="Label" />
@@ -363,7 +282,6 @@ export default function AdminPlans() {
                 })}
               </div>
 
-              {/* Payment Methods */}
               <div className="border-t border-[#2a2a2a] pt-3">
                 <h4 className="text-white text-sm font-medium mb-2">Payment Methods</h4>
                 <div className="flex flex-wrap gap-2 mb-3">
@@ -374,8 +292,8 @@ export default function AdminPlans() {
                     </span>
                   ))}
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                  {allowedMethods.filter(m => !(editing.paymentMethods || []).includes(m)).map(m => (
+                <div className="flex gap-2">
+                  {ALL_METHODS.filter(m => !(editing.paymentMethods || []).includes(m)).map(m => (
                     <button key={m} onClick={() => addPaymentMethod(m)}
                       className="px-3 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-zinc-400 text-xs hover:border-violet-500 hover:text-violet-400">
                       + {m}
@@ -384,7 +302,6 @@ export default function AdminPlans() {
                 </div>
               </div>
 
-              {/* Bank Details */}
               <div className="border-t border-[#2a2a2a] pt-3">
                 <h4 className="text-white text-sm font-medium mb-2">Payment Details (per method)</h4>
                 {(editing.paymentMethods || []).map((method: string) => (
@@ -410,49 +327,6 @@ export default function AdminPlans() {
               </div>
               <button onClick={handleSave} className="w-full py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 flex items-center justify-center gap-2">
                 <Save size={16} /> Save Plan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add Feature Definition Modal */}
-      {showAddFeature && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowAddFeature(false)}>
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-white font-semibold">Add New Feature</h3>
-              <button onClick={() => setShowAddFeature(false)} className="text-zinc-400 hover:text-white"><X size={18} /></button>
-            </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-zinc-400 text-sm">Feature Key (slug)</label>
-                <input value={newFeature.key} onChange={(e) => setNewFeature({ ...newFeature, key: e.target.value.replace(/[^a-zA-Z0-9_]/g, "") })}
-                  className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" placeholder="e.g. dailySearches" />
-              </div>
-              <div>
-                <label className="text-zinc-400 text-sm">Display Label</label>
-                <input value={newFeature.label} onChange={(e) => setNewFeature({ ...newFeature, label: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" placeholder="e.g. Daily Searches" />
-              </div>
-              <div>
-                <label className="text-zinc-400 text-sm">Type</label>
-                <select value={newFeature.type} onChange={(e) => setNewFeature({ ...newFeature, type: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm">
-                  <option value="number">Number</option>
-                  <option value="boolean">Boolean</option>
-                </select>
-              </div>
-              {newFeature.type === "number" && (
-                <div>
-                  <label className="text-zinc-400 text-sm">Default Value</label>
-                  <input type="number" value={newFeature.defaultVal} onChange={(e) => setNewFeature({ ...newFeature, defaultVal: parseInt(e.target.value) || 0 })}
-                    className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" />
-                </div>
-              )}
-              <button onClick={handleAddFeatureDef}
-                className="w-full py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700">
-                Add Feature
               </button>
             </div>
           </div>
