@@ -87,6 +87,12 @@ export default function LoginPage() {
               className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-violet-800 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
               {loading ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : "Sign In"}
             </button>
+
+            <div className="text-center mt-2">
+              <button type="button" onClick={() => navigate("/forgot-password")} className="text-sm text-zinc-500 hover:text-violet-400 transition-colors">
+                Forgot Password?
+              </button>
+            </div>
           </form>
 
           <p className="text-center text-sm text-zinc-500 mt-4">

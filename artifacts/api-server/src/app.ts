@@ -8,6 +8,7 @@ import path from "path";
 // Routes
 import authRoutes from "./routes/auth.js";
 import authCustomRoutes from "./routes/auth-custom.js";
+import passwordResetRoutes from "./routes/password-reset.js";
 import channelRoutes from "./routes/channels.js";
 import queueRoutes from "./routes/queue.js";
 import sourceRoutes from "./routes/sources.js";
@@ -50,6 +51,7 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // Public routes
 app.use("/api/health", healthRoutes);
 app.use("/api/webhooks", webhookRoutes);
+app.use("/api/auth", passwordResetRoutes);
 
 // Protected routes — naye custom auth routes pehle, phir purane (sirf /me, /logout)
 app.use("/api/auth", authCustomRoutes);
