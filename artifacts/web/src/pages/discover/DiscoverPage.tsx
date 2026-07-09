@@ -189,6 +189,7 @@ export default function DiscoverPage() {
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [page, setPage] = useState(1);
   const [searchedVariations, setSearchedVariations] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const PER_PAGE = 20;
 
   const getMinFollowers = (f: string) => {
@@ -201,6 +202,7 @@ export default function DiscoverPage() {
   const handleSearch = useCallback(async () => {
     if (!query.trim()) return;
     setLoading(true);
+    setError(null);
     setPage(1);
     setSearchedVariations([]);
     try {
@@ -215,7 +217,8 @@ export default function DiscoverPage() {
 
       const variations = [searchQuery, `${searchQuery} tips`, `${searchQuery} tutorial`, `${searchQuery} ideas`, `${searchQuery} content`, `${searchQuery} best`];
       setSearchedVariations(variations);
-    } catch (err) {
+    } catch (err: any) {
+      setError(err?.error || err?.message || "Search failed");
       console.error("Creator search failed:", err);
     }
     setLoading(false);
@@ -295,7 +298,7 @@ export default function DiscoverPage() {
               if (query.trim()) { setLoading(true); setPage(1);
                 const regionParam = region ? `&region=${encodeURIComponent(region)}` : "";
                 api.get<CreatorResponse>(`/discover/creators?q=${encodeURIComponent(query.trim())}&type=${searchType}&count=40&minFollowers=${getMinFollowers(`${limit}+`)}${regionParam}`)
-                .then(d => setResults(d)).catch(() => {}).finally(() => setLoading(false));
+                .then(d => { setResults(d); setError(null); }).catch((err: any) => setError(err?.error || err?.message || "Search failed")).finally(() => setLoading(false));
               }
             }}
             className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${followers === `${limit}+` ? 'bg-violet-600 text-white' : 'bg-[#1a1a1a] border border-[#2a2a2a] text-zinc-400 hover:border-violet-500/30'}`}>
@@ -303,6 +306,13 @@ export default function DiscoverPage() {
           </button>
         ))}
       </div>
+
+      {error && (
+        <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400 flex items-center gap-2">
+          <X size={16} /> {error}
+          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-white"><X size={14} /></button>
+        </div>
+      )}
 
       {/* Results */}
       {results && (

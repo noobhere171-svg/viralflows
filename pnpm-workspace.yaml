@@ -6,4 +6,4 @@ allowBuilds:
   esbuild: true
   msgpackr-extract: true
   typescript: true
-  yt-dlp-exec: set this to true or false
+  yt-dlp-exec: true

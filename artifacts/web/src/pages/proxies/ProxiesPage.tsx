@@ -8,6 +8,7 @@ export default function ProxiesPage() {
   const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ host: "", port: "", username: "", password: "", protocol: "http" });
+  const [error, setError] = useState<string | null>(null);
 
   const { data: proxies = [] } = useQuery<Proxy[]>({
     queryKey: ["proxies"],
@@ -16,7 +17,8 @@ export default function ProxiesPage() {
 
   const addMutation = useMutation({
     mutationFn: () => api.post("/proxies", form),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["proxies"] }); setShowAdd(false); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["proxies"] }); setShowAdd(false); setError(null); },
+    onError: (err: any) => setError(err?.error || err?.message || "Failed to add proxy"),
   });
 
   const deleteMutation = useMutation({
@@ -57,6 +59,13 @@ export default function ProxiesPage() {
               <button onClick={() => addMutation.mutate()} className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded-lg text-sm font-medium">Add</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400 flex items-center gap-2">
+          <X size={16} /> {error}
+          <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-white"><X size={14} /></button>
         </div>
       )}
 
