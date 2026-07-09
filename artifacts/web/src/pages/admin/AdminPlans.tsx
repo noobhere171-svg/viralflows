@@ -43,18 +43,21 @@ export default function AdminPlans() {
   };
   useEffect(() => { fetchData(); }, []);
 
+  const FALLBACK_FEATURES = { channels: 1, sources: 3, gcpProjects: 1, dailyUploads: 3, dailySearches: 3, queueSize: 10, proxies: 0, customProxies: 0, analyticsDays: 7, storageMb: 500, autoRefill: false, scheduledUpload: false, aiSeo: false, _enforce_gcpProjects: true, _enforce_dailySearches: true, _enforce_proxies: true };
+  const FALLBACK_LABELS: Record<string, string> = { channels: "YouTube Channels", sources: "TikTok Sources", gcpProjects: "GCP Projects", dailyUploads: "Daily Uploads", dailySearches: "Daily Searches", queueSize: "Queue Size", proxies: "Admin Proxies", customProxies: "Custom Proxies", analyticsDays: "Analytics Days", storageMb: "Storage (MB)", autoRefill: "Auto-Refill", scheduledUpload: "Scheduled Upload", aiSeo: "AI SEO" };
+
   const getDefaultFeatures = () => {
+    if (featureDefs.length === 0) return { ...FALLBACK_FEATURES };
     const def: Record<string, any> = {};
     for (const f of featureDefs) {
       def[f.key] = f.defaultVal ?? (f.type === "boolean" ? false : 0);
-      if (f.isEnforced) {
-        def[`_enforce_${f.key}`] = true;
-      }
+      if (f.isEnforced) def[`_enforce_${f.key}`] = true;
     }
     return def;
   };
 
   const getDefaultLabels = () => {
+    if (featureDefs.length === 0) return { ...FALLBACK_LABELS };
     const labels: Record<string, string> = {};
     for (const f of featureDefs) {
       if (!f.key.startsWith("_")) labels[f.key] = f.label;
@@ -264,7 +267,7 @@ export default function AdminPlans() {
                     ))}
                   </div>
                 </div>
-                {featureDefs.map((def) => {
+                {featureDefs.length > 0 ? featureDefs.map((def) => {
                   const val = editing.features?.[def.key];
                   if (val === undefined) return null;
                   return (
@@ -297,7 +300,36 @@ export default function AdminPlans() {
                       </button>
                     </div>
                   );
-                })}
+                }) : (editing.features ? Object.entries(editing.features).filter(([k]) => !k.startsWith("_")) : []).map(([key, val]: [string, any]) => (
+                  <div key={key} className="flex items-center gap-2 py-1 group">
+                    <input value={editing.featureLabels?.[key] || key}
+                      onChange={(e) => updateFeatureLabel(key, e.target.value)}
+                      className="w-1/3 px-2 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-violet-400 text-sm" placeholder="Label" />
+                    {typeof val === "boolean" ? (
+                      <input type="checkbox" checked={!!val} onChange={(e) => updateFeature(key, e.target.checked)}
+                        className="w-4 h-4 rounded border-[#2a2a2a]" />
+                    ) : (
+                      <input type="number" value={val === -1 ? "" : val} onChange={(e) => {
+                        const v = e.target.value;
+                        updateFeature(key, v === "" ? -1 : parseInt(v) || 0);
+                      }}
+                        className="w-24 px-2 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-white text-sm text-right"
+                        placeholder="Unlimited" />
+                    )}
+                    {["gcpProjects", "dailySearches", "proxies"].includes(key) && (
+                      <label className="flex items-center gap-1 text-xs text-zinc-500 cursor-pointer">
+                        <input type="checkbox" checked={editing.features?.[`_enforce_${key}`] !== false}
+                          onChange={(e) => updateFeature(`_enforce_${key}`, e.target.checked)}
+                          className="w-3 h-3" />
+                        Enforce
+                      </label>
+                    )}
+                    <button onClick={() => deleteFeatureFromPlan(key)}
+                      className="text-zinc-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                ))}
               </div>
 
               <div className="border-t border-[#2a2a2a] pt-3">
