@@ -4,7 +4,7 @@ import crypto from "crypto";
 import db from "../../../../lib/db/src/index.js";
 import { users } from "../../../../lib/db/src/schema/users.js";
 import { passwordResetTokens } from "../../../../lib/db/src/schema/password-reset-tokens.js";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, isNull, gt, sql } from "drizzle-orm";
 
 const router = Router();
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
@@ -99,7 +99,7 @@ router.post("/reset-password", async (req: Request, res: Response) => {
     const tokens = await db.select().from(passwordResetTokens)
       .where(and(
         isNull(passwordResetTokens.usedAt),
-        sql`${passwordResetTokens.expiresAt} > ${now}`,
+        gt(passwordResetTokens.expiresAt, now),
       ));
 
     let matchedToken: typeof passwordResetTokens.$inferSelect | null = null;
