@@ -11,7 +11,7 @@ export type LimitCheck = {
 export async function getUserPlanFeatures(userId: string): Promise<Record<string, any>> {
   const [user] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, userId));
   if (!user) return {};
-  const [plan] = await db.select().from(plans).where(eq(plans.name, user.plan));
+  const [plan] = await db.select().from(plans).where(eq(plans.name, user.plan ?? "free"));
   return (plan?.features as Record<string, any>) || {};
 }
 
