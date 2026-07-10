@@ -392,9 +392,9 @@ export async function fetchTikTokUserVideos(username: string, options: TikTokOpt
   return allVideos;
 }
 
-export async function fetchTikTokUserVideosViaYtDlp(username: string, cookiesPath?: string): Promise<TikTokVideo[]> {
+export async function fetchTikTokUserVideosViaYtDlp(username: string, cookiesPath?: string, proxyUrl?: string): Promise<TikTokVideo[]> {
   const cleanUsername = username.replace(/^@/, "");
-  console.log(`[TikTok] Fetching user videos via yt-dlp: @${cleanUsername}`);
+  console.log(`[TikTok] Fetching user videos via yt-dlp: @${cleanUsername}${proxyUrl ? " (via proxy)" : ""}`);
   const { stdout } = await (ytdl as any).exec(`https://www.tiktok.com/@${cleanUsername}`, {
     flatPlaylist: true,
     dumpJson: true,
@@ -403,6 +403,7 @@ export async function fetchTikTokUserVideosViaYtDlp(username: string, cookiesPat
     socketTimeout: 60,
     retries: 5,
     cookies: cookiesPath,
+    proxy: proxyUrl,
   });
 
   const lines = stdout.trim().split("\n").filter(Boolean);
@@ -433,7 +434,7 @@ export async function fetchTikTokUserVideosViaYtDlp(username: string, cookiesPat
   return videos;
 }
 
-export async function fetchTikTokVideoViaYtDlp(url: string, cookiesPath?: string): Promise<TikTokVideo> {
+export async function fetchTikTokVideoViaYtDlp(url: string, cookiesPath?: string, proxyUrl?: string): Promise<TikTokVideo> {
   console.log(`[TikTok] Fetching video info via yt-dlp: ${url.slice(0, 60)}...`);
   const data = await ytdl(url, {
     noWarnings: true,
@@ -441,6 +442,7 @@ export async function fetchTikTokVideoViaYtDlp(url: string, cookiesPath?: string
     socketTimeout: 60,
     retries: 5,
     cookies: cookiesPath,
+    proxy: proxyUrl,
   }) as any;
 
   const videoId = data.id || url.match(/video\/(\d+)/)?.[1] || randomUUID();

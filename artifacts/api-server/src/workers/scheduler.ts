@@ -2,6 +2,7 @@ import db from "../../../../lib/db/src/index.js";
 import { scheduledUploads } from "../../../../lib/db/src/schema/scheduled-uploads.js";
 import { videoQueue } from "../../../../lib/db/src/schema/video-queue.js";
 import { channels } from "../../../../lib/db/src/schema/channels.js";
+import { proxies } from "../../../../lib/db/src/schema/proxies.js";
 import { sources } from "../../../../lib/db/src/schema/sources.js";
 import { operations } from "../../../../lib/db/src/schema/operations.js";
 import { copyrightClaims } from "../../../../lib/db/src/schema/copyright-claims.js";
@@ -42,6 +43,14 @@ async function resolveCookiesPath(workspaceId?: string | null): Promise<string |
   if (!workspaceId) return undefined;
   const exists = await hasWorkspaceCookies(workspaceId);
   return exists ? getWorkspaceCookiesPath(workspaceId) : undefined;
+}
+
+async function resolveProxyUrl(proxyId?: string | null): Promise<string | undefined> {
+  if (!proxyId) return undefined;
+  const [proxy] = await db.select().from(proxies).where(eq(proxies.id, proxyId));
+  if (!proxy) return undefined;
+  const auth = proxy.username ? `${proxy.username}:${proxy.passwordEncrypted || ""}@` : "";
+  return `${proxy.protocol}://${auth}${proxy.ipAddress}:${proxy.port}`;
 }
 
 const GCP_DAILY_LIMIT = Number(process.env.GCP_DAILY_LIMIT ?? 4);
@@ -717,6 +726,7 @@ async function processAutoRefill() {
       }
 
       const cookiesPath = await resolveCookiesPath(workspaceId);
+      const proxyUrl = await resolveProxyUrl(src.proxyId);
 
       const maxAgeMinutes = Math.min(filter.maxAge || 10080, 525600);
       const sortBy = filter.sortBy || "oldest";
@@ -743,9 +753,9 @@ async function processAutoRefill() {
       for (let attempt = 1; attempt <= MAX_YTDLP_RETRIES; attempt++) {
         try {
           if (isTikTokUsername(urlOrHandle)) {
-            allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath);
+            allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath, proxyUrl);
           } else {
-            const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath);
+            const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath, proxyUrl);
             allVideos = [single];
           }
           break;
@@ -766,9 +776,9 @@ async function processAutoRefill() {
         try {
           console.log(`[AutoRefill] yt-dlp failed for ${urlOrHandle}, falling back to tikwm API...`);
           if (isTikTokUsername(urlOrHandle)) {
-            allVideos = await fetchTikTokUserVideos(urlOrHandle);
+            allVideos = await fetchTikTokUserVideos(urlOrHandle, { proxyUrl });
           } else {
-            const single = await fetchTikTokVideo(urlOrHandle);
+            const single = await fetchTikTokVideo(urlOrHandle, { proxyUrl });
             allVideos = [single];
           }
           console.log(`[AutoRefill] tikwm fallback succeeded: ${allVideos.length} videos for ${urlOrHandle}`);
@@ -777,11 +787,13 @@ async function processAutoRefill() {
         }
       }
       if (allVideos.length === 0) {
+        console.warn(`[AutoRefill] Source ${src.accountHandle || src.id}: all fetch attempts returned 0 videos. yt-dlp err: ${lastFetchErr?.message || "none"}, ytdlpFailed=${ytdlpFailed}`);
         if (lastFetchErr && isRealTikError(lastFetchErr?.message || "")) {
           await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
         } else {
           await db.update(sources).set({ status: "empty", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
         }
+        refillThrottle[src.id] = Date.now() + REFILL_THROTTLE_MS;
         continue;
       }
       await db.update(sources).set({ status: "active", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
@@ -890,6 +902,7 @@ export async function triggerSourceRefill(sourceId: string): Promise<void> {
     }
 
     const cookiesPath = await resolveCookiesPath(workspaceId);
+    const proxyUrl = await resolveProxyUrl(src.proxyId);
 
     const maxAgeMinutes = Math.min(filter.maxAge || 10080, 525600);
     const sortBy = filter.sortBy || "oldest";
@@ -905,9 +918,9 @@ export async function triggerSourceRefill(sourceId: string): Promise<void> {
     for (let attempt = 1; attempt <= MAX_YTDLP_RETRIES; attempt++) {
       try {
         if (isTikTokUsername(urlOrHandle)) {
-          allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath);
+          allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath, proxyUrl);
         } else {
-          const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath);
+          const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath, proxyUrl);
           allVideos = [single];
         }
         break;
@@ -928,9 +941,9 @@ export async function triggerSourceRefill(sourceId: string): Promise<void> {
       try {
         console.log(`[TriggerRefill] yt-dlp failed for ${urlOrHandle}, falling back to tikwm API...`);
         if (isTikTokUsername(urlOrHandle)) {
-          allVideos = await fetchTikTokUserVideos(urlOrHandle);
+          allVideos = await fetchTikTokUserVideos(urlOrHandle, { proxyUrl });
         } else {
-          const single = await fetchTikTokVideo(urlOrHandle);
+          const single = await fetchTikTokVideo(urlOrHandle, { proxyUrl });
           allVideos = [single];
         }
         console.log(`[TriggerRefill] tikwm fallback succeeded: ${allVideos.length} videos for ${urlOrHandle}`);
@@ -939,7 +952,7 @@ export async function triggerSourceRefill(sourceId: string): Promise<void> {
       }
     }
     if (allVideos.length === 0) {
-      console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: all fetch attempts failed: ${lastFetchErr?.message || "unknown"}`);
+      console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: all fetch attempts failed. yt-dlp err: ${lastFetchErr?.message || "none"}, ytdlpFailed=${ytdlpFailed}`);
       return;
     }
 
