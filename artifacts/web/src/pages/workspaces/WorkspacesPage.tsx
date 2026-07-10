@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2, Globe, Upload, X, Check, RefreshCw, Search, Settings2, Copy, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Globe, Upload, X, Check, RefreshCw, Search, Settings2, Copy, AlertTriangle, HelpCircle } from "lucide-react";
 import api from "../../lib/api";
 import type { Workspace, Channel, Schedule } from "../../types";
 
 export default function WorkspacesPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: "", gcpProjectId: "", gcpEmail: "" });
@@ -294,7 +296,13 @@ export default function WorkspacesPage() {
               <h3 className="text-xs font-semibold text-zinc-500 uppercase mb-3">OAuth Files</h3>
               {creds.length === 0 ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-zinc-500">Upload JSON</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500">Upload JSON</span>
+                    <button onClick={() => navigate("/")}
+                      className="text-[10px] text-zinc-600 hover:text-violet-400 flex items-center gap-0.5">
+                      <HelpCircle size={10} /> Guide
+                    </button>
+                  </div>
                   <button onClick={() => handleUploadGcp(ws)} disabled={uploadingId === ws.id}
                     className="text-xs bg-violet-500/10 text-violet-400 px-2 py-0.5 rounded hover:bg-violet-500/20">
                     {uploadingId === ws.id ? "Uploading..." : "Upload"}
@@ -336,10 +344,16 @@ export default function WorkspacesPage() {
                   })}
                 </div>
               )}
-              <button onClick={() => handleUploadGcp(ws)} disabled={uploadingId === ws.id}
-                className="text-xs text-violet-400 hover:text-violet-300 mt-1.5">
-                {uploadingId === ws.id ? "Uploading..." : creds.length === 0 ? "+ Add GCP Project" : "+ Add Another GCP"}
-              </button>
+              <div className="flex items-center justify-between mt-1.5">
+                <button onClick={() => handleUploadGcp(ws)} disabled={uploadingId === ws.id}
+                  className="text-xs text-violet-400 hover:text-violet-300">
+                  {uploadingId === ws.id ? "Uploading..." : creds.length === 0 ? "+ Add GCP Project" : "+ Add Another GCP"}
+                </button>
+                <button onClick={() => navigate("/")}
+                  className="text-[10px] text-zinc-600 hover:text-violet-400 flex items-center gap-0.5">
+                  <HelpCircle size={10} /> Guide
+                </button>
+              </div>
             </div>
 
             {/* GCP Blocked/Expired Alert */}
