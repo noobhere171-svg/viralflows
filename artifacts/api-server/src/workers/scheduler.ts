@@ -693,8 +693,8 @@ async function processAutoRefill() {
 
   for (const src of allSources) {
     try {
-      const filter = src.contentFilter as any;
-      if (filter && filter.autoRefillEnabled === false) continue;
+      const filter = (src.contentFilter as any) || {};
+      if (filter.autoRefillEnabled === false) continue;
 
       let workspaceId: string | null = null;
 
@@ -876,8 +876,8 @@ export async function triggerSourceRefill(sourceId: string): Promise<void> {
     const [src] = await db.select().from(sources).where(eq(sources.id, sourceId));
     if (!src) { console.warn(`[TriggerRefill] Source ${sourceId} not found`); return; }
 
-    const filter = src.contentFilter as any;
-    if (filter && filter.autoRefillEnabled === false) { console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: autoRefill not enabled`); return; }
+    const filter = (src.contentFilter as any) || {};
+    if (filter.autoRefillEnabled === false) { console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: autoRefill not enabled`); return; }
 
     let workspaceId: string | null = null;
 
