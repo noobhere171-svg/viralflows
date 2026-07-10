@@ -1,5 +1,5 @@
 import db from "./db/src/index.js";
-import { users, plans, gcpCredentials, proxies, globalProxies } from "./db/src/schema/index.js";
+import { users, plans, gcpCredentials, proxies, globalProxies, featureDefinitions } from "./db/src/schema/index.js";
 import { eq, sql, count } from "drizzle-orm";
 
 export type LimitCheck = {
@@ -26,12 +26,16 @@ export async function checkCountLimit(
   if (enforce === false) {
     return { allowed: true, current: 0, limit: -1 };
   }
-  const limit = features?.[featureKey];
+  let limit = features?.[featureKey];
   if (limit === undefined || limit === null || limit === -1) {
-    return { allowed: true, current: 0, limit: -1 };
+    const [fd] = await db.select().from(featureDefinitions).where(eq(featureDefinitions.key, featureKey));
+    limit = fd?.defaultVal;
+    if (limit === undefined || limit === null || limit === -1) {
+      return { allowed: true, current: 0, limit: -1 };
+    }
   }
   const current = await getCurrentCount();
-  return { allowed: current < limit, current, limit };
+  return { allowed: current < Number(limit), current, limit: Number(limit) };
 }
 
 export async function checkGcpProjectsLimit(userId: string): Promise<LimitCheck> {
