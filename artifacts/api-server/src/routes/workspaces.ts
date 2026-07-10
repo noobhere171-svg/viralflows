@@ -133,11 +133,20 @@ router.get("/oauth/callback", async (req, res) => {
     const statusMsg = channelInfo
       ? `Authorization successful! YouTube channel: ${verifiedName} (${verifiedId}). You can close this window.`
       : `Authorization saved but channel verification failed. You may need to re-authorize.`;
+    const channelIdStr = channelId || "";
+    const verifiedJson = JSON.stringify(channelInfo ? { id: channelInfo.id, name: channelInfo.name } : null);
     res.status(200).send(`<!DOCTYPE html><html><body><script>
+      var msg = { type: "youtube-oauth-success", workspaceId: "${workspaceId}", channelId: "${channelIdStr}", verifiedChannel: ${verifiedJson} };
       if (window.opener) {
-        window.opener.postMessage({ type: "youtube-oauth-success", workspaceId: "${workspaceId}", channelId: "${channelId || ""}", verifiedChannel: ${JSON.stringify(channelInfo ? { id: channelInfo.id, name: channelInfo.name } : null)} }, "${FRONTEND_URL}");
+        window.opener.postMessage(msg, "${FRONTEND_URL}");
+        setTimeout(function() { window.close(); }, 2000);
+      } else {
+        var url = new URL("${FRONTEND_URL}/workspaces");
+        url.searchParams.set("oauth", "success");
+        if ("${channelIdStr}") url.searchParams.set("channelId", "${channelIdStr}");
+        url.searchParams.set("verified", encodeURIComponent(${verifiedJson}));
+        window.location.href = url.toString();
       }
-      setTimeout(function() { window.close(); }, 2000);
     </script><p style="font-family:sans-serif;text-align:center;margin-top:40px;color:#333">${statusMsg}</p></body></html>`);
   } catch (err: any) {
     console.error("[OAuth callback error]", err);

@@ -250,8 +250,40 @@ export default function ChannelsPage() {
     [{ tiktokUsername: "", channelName: "", youtubeChannelId: "", gmail: "" }]
   );
   const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [showAutoRefill, setShowAutoRefill] = useState(false);
   const [autoRefillGmailFilter, setAutoRefillGmailFilter] = useState("all");
+
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "youtube-oauth-success") {
+        queryClient.invalidateQueries({ queryKey: ["channels"] });
+        const ch = e.data.verifiedChannel;
+        if (ch) setFeedback({ type: "success", msg: `Authorized YouTube channel: ${ch.name}` });
+        else setFeedback({ type: "success", msg: "Channel authorized!" });
+        setTimeout(() => setFeedback(null), 8000);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [queryClient]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauth = params.get("oauth");
+    const channelId = params.get("channelId");
+    const verifiedRaw = params.get("verified");
+    if (oauth === "success") {
+      let verifiedName = "";
+      if (verifiedRaw) {
+        try { const v = JSON.parse(decodeURIComponent(verifiedRaw)); if (v?.name) verifiedName = v.name; } catch {}
+      }
+      setFeedback({ type: "success", msg: verifiedName ? `Authorized YouTube channel: ${verifiedName}` : "Channel authorized!" });
+      window.history.replaceState({}, "", window.location.pathname);
+      queryClient.invalidateQueries({ queryKey: ["channels"] });
+      setTimeout(() => setFeedback(null), 8000);
+    }
+  }, [queryClient]);
 
   const { data: channels = [] } = useQuery<Channel[]>({
     queryKey: ["channels"],
@@ -458,6 +490,13 @@ export default function ChannelsPage() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {feedback && (
+        <div className={`mb-4 ${feedback.type === "success" ? "bg-green-500/10 border-green-500/30 text-green-400" : "bg-red-500/10 border-red-500/30 text-red-400"} border rounded-lg px-4 py-3 text-sm flex items-center gap-2`}>
+          {feedback.type === "success" ? <Check size={16} /> : <X size={16} />} {feedback.msg}
+          <button onClick={() => setFeedback(null)} className="ml-auto hover:text-white"><X size={14} /></button>
         </div>
       )}
 

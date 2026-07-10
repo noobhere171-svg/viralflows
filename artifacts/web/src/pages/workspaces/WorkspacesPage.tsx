@@ -55,11 +55,12 @@ export default function WorkspacesPage() {
     return () => window.removeEventListener("message", handler);
   }, [queryClient]);
 
-  // Handle OAuth error from URL params (e.g., wrong_account conflict)
+  // Handle OAuth error/success from URL params (redirect flow when window.opener is null)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oauth = params.get("oauth");
     const message = params.get("message");
+    const verifiedRaw = params.get("verified");
     if (oauth === "error" && message) {
       if (message.startsWith("wrong_account:")) {
         const parts = message.split(":");
@@ -69,8 +70,17 @@ export default function WorkspacesPage() {
       } else {
         fb("error", `OAuth error: ${message}`);
       }
-      // Clean URL
       window.history.replaceState({}, "", window.location.pathname);
+      queryClient.invalidateQueries({ queryKey: ["channels"] });
+    }
+    if (oauth === "success") {
+      let verifiedName = "";
+      if (verifiedRaw) {
+        try { const v = JSON.parse(decodeURIComponent(verifiedRaw)); if (v?.name) verifiedName = v.name; } catch {}
+      }
+      fb("success", verifiedName ? `Authorized YouTube channel: ${verifiedName}` : "Channel authorized!");
+      window.history.replaceState({}, "", window.location.pathname);
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       queryClient.invalidateQueries({ queryKey: ["channels"] });
     }
   }, [queryClient]);
