@@ -12,6 +12,13 @@ async function request<T = any>(method: string, path: string, body?: any): Promi
     body: body ? JSON.stringify(body) : undefined,
   });
 
+  if (res.status === 401) {
+    localStorage.removeItem("vf_token");
+    localStorage.removeItem("vf_user");
+    window.location.href = "/login";
+    throw new Error("Session expired");
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Request failed" }));
     throw new Error(err.error || `HTTP ${res.status}`);

@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./components/layout/AppLayout";
 import AdminLayout from "./components/layout/AdminLayout";
@@ -35,8 +36,22 @@ import AdminProxies from "./pages/admin/AdminProxies";
 import AdminPayments from "./pages/admin/AdminPayments";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const hasToken = !!localStorage.getItem("vf_token");
-  if (!hasToken) return <Navigate to="/login" />;
+  const [validating, setValidating] = useState(true);
+  const [valid, setValid] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("vf_token");
+    if (!token) { setValid(false); setValidating(false); return; }
+    const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+    fetch(API_BASE + "/channels/count", {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => {
+      if (r.ok) { setValid(true); } else { localStorage.removeItem("vf_token"); localStorage.removeItem("vf_user"); setValid(false); }
+    }).catch(() => { setValid(false); }).finally(() => setValidating(false));
+  }, []);
+
+  if (validating) return <div className="min-h-screen bg-[#0f0f0f]" />;
+  if (!valid) return <Navigate to="/login" />;
   return <>{children}</>;
 }
 
