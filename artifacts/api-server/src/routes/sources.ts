@@ -11,6 +11,7 @@ import { fetchTikTokVideo, fetchTikTokUserVideos, fetchTikTokVideoViaYtDlp, fetc
 import { withTikwmRetry, isRealTikError } from "../../../../lib/rate-limiter.js";
 import { generateSeo } from "../lib/llm.js";
 import { hasWorkspaceCookies, getWorkspaceCookiesPath } from "../lib/filebase.js";
+import { refillSourceToLimit } from "../workers/scheduler.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -103,37 +104,70 @@ router.post("/:id/queue-selected", async (req: AuthRequest, res) => {
     const selected = allVideos.filter(v => videoIds.includes(v.id));
     if (selected.length === 0) return res.status(404).json({ error: "No matching videos found" });
 
+    // Check current pending count for this source
+    const [{ count: existingPending }] = await db.select({ count: sql<number>`count(*)` })
+      .from(videoQueue)
+      .where(and(eq(videoQueue.sourceId, src.id), eq(videoQueue.status, "pending")));
+    const maxPerSource = 5;
+    const slotsAvailable = Math.max(0, maxPerSource - Number(existingPending));
+
+    if (slotsAvailable === 0) {
+      return res.status(400).json({ error: `Source already has ${existingPending} pending videos (max ${maxPerSource})` });
+    }
+
+    const toQueue = selected.slice(0, slotsAvailable);
+    const skippedCount = selected.length - toQueue.length;
+
     const queueItems: any[] = [];
-    for (const video of selected) {
-      const [queueItem] = await db.insert(videoQueue).values({
-        userId: src.userId,
-        sourceId: src.id,
-        targetChannelId: src.linkedChannelId || undefined,
-        title: video.title,
-        sourceUrl: `${video.authorUrl}/video/${video.id}`,
-        sourceVideoId: video.id,
-        sourcePlatform: src.platform,
-        thumbnailUrl: video.coverUrl,
-        srcViews: video.playCount || 0,
-        srcLikes: video.likeCount || 0,
-        status: "pending",
-      }).returning();
+    for (const video of toQueue) {
+      // Re-check plan queueSize limit before each insert
+      const { checkQueueSizeLimit } = await import("../../../../lib/plan-limits.js");
+      const planCheck = await checkQueueSizeLimit(src.userId);
+      if (!planCheck.allowed) {
+        break;
+      }
+
+      let inserted: any;
+      try {
+        [inserted] = await db.insert(videoQueue).values({
+          userId: src.userId,
+          sourceId: src.id,
+          targetChannelId: src.linkedChannelId || undefined,
+          title: video.title,
+          sourceUrl: `${video.authorUrl}/video/${video.id}`,
+          sourceVideoId: video.id,
+          sourcePlatform: src.platform,
+          thumbnailUrl: video.coverUrl,
+          srcViews: video.playCount || 0,
+          srcLikes: video.likeCount || 0,
+          status: "pending",
+        }).returning();
+      } catch (insertErr: any) {
+        if (insertErr?.code === "23505") continue;
+        throw insertErr;
+      }
 
       try {
         const seo = await generateSeo(video.title || "Untitled", src.platform);
         await db.update(videoQueue).set({
           title: seo.title, description: seo.description, tags: seo.tags, category: seo.category,
-        }).where(eq(videoQueue.id, queueItem.id));
-        queueItem.title = seo.title;
-        queueItem.description = seo.description;
-        queueItem.tags = seo.tags;
-        queueItem.category = seo.category ?? null;
+        }).where(eq(videoQueue.id, inserted.id));
+        inserted.title = seo.title;
+        inserted.description = seo.description;
+        inserted.tags = seo.tags;
+        inserted.category = seo.category ?? null;
       } catch {}
 
-      queueItems.push(queueItem);
+      queueItems.push(inserted);
     }
 
-    res.json({ success: true, queued: queueItems.length, queueItems });
+    res.json({
+      success: true,
+      queued: queueItems.length,
+      skippedDueToLimit: skippedCount,
+      queueItems,
+      message: skippedCount > 0 ? `${skippedCount} video(s) skipped — source already has ${existingPending} pending (max ${maxPerSource})` : undefined,
+    });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
@@ -142,124 +176,24 @@ router.post("/:id/refill", async (req: AuthRequest, res) => {
     const [src] = await db.select().from(sources).where(eq(sources.id, req.params.id as string));
     if (!src) return res.status(404).json({ error: "Source not found" });
 
-    let workspaceId: string | null = null;
-
-    // Check channel is authorized before refilling
     if (src.linkedChannelId) {
-      const [ch] = await db.select({ authStatus: channels.authStatus, workspaceId: channels.workspaceId })
+      const [ch] = await db.select({ authStatus: channels.authStatus })
         .from(channels).where(eq(channels.id, src.linkedChannelId));
       if (!ch || ch.authStatus !== "authorized") {
         return res.status(400).json({ error: `Cannot refill: linked channel auth status is "${ch?.authStatus}". Only authorized channels can refill.` });
       }
-      workspaceId = ch.workspaceId;
     }
 
-    const cookiesPath = workspaceId && await hasWorkspaceCookies(workspaceId) ? getWorkspaceCookiesPath(workspaceId) : undefined;
+    const result = await refillSourceToLimit(src.id, { maxPerSource: 5, skipThrottle: true });
 
-    const filter = (src.contentFilter || {}) as any;
-    const maxAgeMinutes = Math.min(filter.maxAge || 10080, 525600);
-    const sortBy = filter.sortBy || "oldest";
-    const minViews = Math.max(filter.minViews || 0, 0);
-    const REFILL_AMOUNT = 5;
-
-    const urlOrHandle = src.accountHandle || src.accountUrl;
-    if (!urlOrHandle) return res.status(400).json({ error: "No handle/URL configured" });
-
-    // Skip if already enough queued
-    const [{ count: existingCount }] = await db.select({ count: sql<number>`count(*)` })
-      .from(videoQueue)
-      .where(and(eq(videoQueue.sourceId, src.id), eq(videoQueue.status, "pending")));
-    if (Number(existingCount) >= REFILL_AMOUNT) {
-      return res.json({ success: true, queued: 0, queueItems: [], message: "Already enough queued" });
+    if (result.skipped && result.pendingBefore >= 5) {
+      return res.json({ success: true, queued: 0, message: `Already ${result.pendingBefore} pending (max 5)` });
+    }
+    if (result.exhausted) {
+      return res.json({ success: true, queued: 0, message: "Source exhausted — all videos already used" });
     }
 
-    let allVideos: Awaited<ReturnType<typeof fetchTikTokUserVideos>> = [];
-    if (isTikTokUsername(urlOrHandle)) {
-      allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath).catch(() => fetchTikTokUserVideos(urlOrHandle));
-    } else {
-      const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath).catch(() => fetchTikTokVideo(urlOrHandle));
-      allVideos = [single];
-    }
-
-    // Exclude already-used videos (match by sourceVideoId)
-    const existing = await db.select({ sourceVideoId: videoQueue.sourceVideoId })
-      .from(videoQueue)
-      .where(and(eq(videoQueue.sourceId, src.id), eq(videoQueue.userId, src.userId), eq(videoQueue.status, "pending"), isNotNull(videoQueue.sourceVideoId)));
-    const existingIds = new Set(existing.map(q => q.sourceVideoId));
-
-    let available = allVideos.filter(v => !existingIds.has(v.id));
-
-    // Filter by maxAge
-    if (maxAgeMinutes > 0) {
-      const cutoffMs = Date.now() - maxAgeMinutes * 60 * 1000;
-      available = available.filter((v: any) => {
-        if (v.timestamp) return v.timestamp * 1000 >= cutoffMs;
-        if (v.upload_date) {
-          if (maxAgeMinutes < 1440) return true;
-          const year = parseInt(v.upload_date.slice(0, 4));
-          const month = parseInt(v.upload_date.slice(4, 6)) - 1;
-          const day = parseInt(v.upload_date.slice(6, 8));
-          const dayCutoff = new Date(cutoffMs);
-          dayCutoff.setHours(0, 0, 0, 0);
-          return new Date(year, month, day) >= dayCutoff;
-        }
-        return true;
-      });
-    }
-
-    if (sortBy === "all" || sortBy === "most_recent") {
-      if (minViews > 0) available = available.filter(v => (v.likeCount || 0) >= minViews);
-    } else if (sortBy === "oldest") {
-      if (minViews > 0) available = available.filter(v => (v.likeCount || 0) >= minViews);
-      available.reverse();
-    } else if (sortBy === "most_viewed") {
-      if (minViews > 0) available = available.filter(v => (v.likeCount || 0) >= minViews);
-      available.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
-    }
-
-    const toQueue = available.slice(0, REFILL_AMOUNT);
-    if (toQueue.length === 0) {
-      const allUsed = await db.select({ sourceVideoId: videoQueue.sourceVideoId }).from(videoQueue)
-        .where(and(eq(videoQueue.sourceId, src.id), isNotNull(videoQueue.sourceVideoId)));
-      const allUsedIds = new Set(allUsed.map((q: any) => q.sourceVideoId));
-      if (allVideos.length > 0 && allVideos.every(v => allUsedIds.has(v.id))) {
-        await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
-        return res.json({ success: true, queued: 0, queueItems: [], message: "Source exhausted — all videos used, status set to error" });
-      }
-      return res.json({ success: true, queued: 0, queueItems: [], message: "No new videos to queue" });
-    }
-
-    const queueItems: any[] = [];
-    for (const video of toQueue) {
-      const [item] = await db.insert(videoQueue).values({
-        userId: src.userId,
-        sourceId: src.id,
-        targetChannelId: src.linkedChannelId || undefined,
-        title: video.title,
-        sourceUrl: `${video.authorUrl}/video/${video.id}`,
-        sourceVideoId: video.id,
-        sourcePlatform: src.platform,
-        thumbnailUrl: video.coverUrl,
-        srcViews: video.playCount || 0,
-        srcLikes: video.likeCount || 0,
-        status: "pending",
-      }).returning();
-
-      try {
-        const seo = await generateSeo(video.title || "Untitled", src.platform);
-        await db.update(videoQueue).set({
-          title: seo.title, description: seo.description, tags: seo.tags, category: seo.category,
-        }).where(eq(videoQueue.id, item.id));
-        item.title = seo.title;
-        item.description = seo.description;
-        item.tags = seo.tags;
-        item.category = seo.category ?? null;
-      } catch {}
-
-      queueItems.push(item);
-    }
-
-    res.json({ success: true, queued: queueItems.length, queueItems });
+    res.json({ success: true, queued: result.queued, pendingBefore: result.pendingBefore, pendingAfter: result.pendingAfter });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
@@ -346,48 +280,16 @@ router.post("/:id/sync", async (req: AuthRequest, res) => {
 
     await db.update(sources).set({ status: "active", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
 
-    const queueItems: any[] = [];
+    await db.insert(operations).values({
+      userId: src.userId,
+      jobType: "source_sync",
+      status: "completed",
+      relatedEntityType: "source",
+      relatedEntityId: src.id,
+      logs: { videosFound: videos.length },
+    });
 
-    for (const video of videos) {
-      const [queueItem] = await db.insert(videoQueue).values({
-        userId: src.userId,
-        sourceId: src.id,
-        targetChannelId: src.linkedChannelId || undefined,
-        title: video.title,
-        sourceUrl: `${video.authorUrl}/video/${video.id}`,
-        sourceVideoId: video.id,
-        sourcePlatform: src.platform,
-        thumbnailUrl: video.coverUrl,
-        status: "pending",
-      }).returning();
-
-      try {
-        const seo = await generateSeo(video.title || "Untitled", src.platform);
-        await db.update(videoQueue).set({
-          title: seo.title,
-          description: seo.description,
-          tags: seo.tags,
-          category: seo.category,
-        }).where(eq(videoQueue.id, queueItem.id));
-        queueItem.title = seo.title;
-        queueItem.description = seo.description;
-        queueItem.tags = seo.tags;
-        queueItem.category = seo.category ?? null;
-      } catch {}
-
-        queueItems.push(queueItem);
-      }
-
-      await db.insert(operations).values({
-        userId: src.userId,
-        jobType: "source_sync",
-        status: "completed",
-        relatedEntityType: "source",
-        relatedEntityId: src.id,
-        logs: { videosFound: videos.length },
-      });
-
-    res.json({ success: true, videosFound: videos.length, queueItems });
+    res.json({ success: true, videosFound: videos.length, videos });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 

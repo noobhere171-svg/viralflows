@@ -11,6 +11,7 @@ import { generateSeo } from "../lib/llm.js";
 import { readJsonFromFilebase } from "../lib/filebase.js";
 import { runUploadPipeline } from "../../../../lib/upload-pipeline.js";
 import { getErrorMessage } from "../../../../lib/errors.js";
+import { checkQueueSizeLimit } from "../../../../lib/plan-limits.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -51,6 +52,15 @@ router.get("/", async (req: AuthRequest, res) => {
 
 router.post("/", async (req: AuthRequest, res) => {
   try {
+    const planCheck = await checkQueueSizeLimit(req.userId!);
+    if (!planCheck.allowed) {
+      return res.status(403).json({
+        error: `Queue size limit reached (${planCheck.current}/${planCheck.limit}). Upgrade your plan to add more videos.`,
+        current: planCheck.current,
+        limit: planCheck.limit,
+      });
+    }
+
     const { sourceUrl, sourcePlatform, targetChannelId, title, description, tags, category, sourceId } = req.body;
     const item = await db.insert(videoQueue).values({
       userId: req.userId!, sourceUrl, sourcePlatform, targetChannelId, title, description, tags, category, sourceId,

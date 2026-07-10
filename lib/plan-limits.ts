@@ -1,6 +1,7 @@
 import db from "./db/src/index.js";
 import { users, plans, gcpCredentials, proxies, globalProxies, featureDefinitions } from "./db/src/schema/index.js";
 import { eq, sql, count } from "drizzle-orm";
+import { videoQueue } from "./db/src/schema/index.js";
 
 export type LimitCheck = {
   allowed: boolean;
@@ -66,4 +67,20 @@ export async function incrementSearchCount(userId: string): Promise<void> {
 export async function getSearchCount(userId: string): Promise<number> {
   const [user] = await db.select({ searchCount: users.searchCount }).from(users).where(eq(users.id, userId));
   return user?.searchCount ?? 0;
+}
+
+export async function checkQueueSizeLimit(userId: string): Promise<LimitCheck> {
+  return checkCountLimit(userId, "queueSize", async () => {
+    const result = await db.select({ count: count() }).from(videoQueue)
+      .where(sql`${videoQueue.userId} = ${userId} AND ${videoQueue.status} IN ('pending', 'processing')`);
+    return Number(result[0]?.count || 0);
+  });
+}
+
+export async function checkDailyUploadsLimit(userId: string): Promise<LimitCheck> {
+  return checkCountLimit(userId, "dailyUploads", async () => {
+    const result = await db.select({ count: count() }).from(videoQueue)
+      .where(sql`${videoQueue.userId} = ${userId} AND ${videoQueue.status} = 'uploaded' AND date_trunc('day', ${videoQueue.uploadedAt}) = date_trunc('day', NOW())`);
+    return Number(result[0]?.count || 0);
+  });
 }

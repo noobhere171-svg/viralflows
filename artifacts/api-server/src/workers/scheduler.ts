@@ -19,6 +19,7 @@ import { getErrorMessage } from "../../../../lib/errors.js";
 import { sendAlert } from "../../../../lib/alerts.js";
 import { createNotification } from "../../../../lib/notifications.js";
 import { runUploadPipeline } from "../../../../lib/upload-pipeline.js";
+import { checkQueueSizeLimit } from "../../../../lib/plan-limits.js";
 
 const POLL_INTERVAL_MS = 60_000;
 const UPLOAD_TIME_WINDOW_MIN = Number(process.env.UPLOAD_TIME_WINDOW_MIN ?? 5);
@@ -416,9 +417,6 @@ async function processSingleSchedule(schedule: any, channel: any) {
     return;
   }
 
-  const cookiesPath = await resolveCookiesPath(channel.workspaceId);
-  const proxyUrl = await resolveProxyUrl(source.proxyId);
-
   // Auth sync: unauthorized channel → source error; recovered → source active
   if (channel.authStatus !== "authorized") {
     if (source.status !== "error") {
@@ -456,80 +454,19 @@ async function processSingleSchedule(schedule: any, channel: any) {
       return;
     }
 
-    const urlOrHandle = source.accountHandle || source.accountUrl;
-    if (!urlOrHandle) {
-      console.warn(`[Scheduler] Schedule ${schedule.id}: source has no accountHandle or accountUrl`);
+    // Try to fill pending queue via centralized refill
+    const filter = (source.contentFilter as any) || {};
+    if (filter.autoRefillEnabled !== false) {
+      await refillSourceToLimit(source.id, { maxPerSource: 5, skipThrottle: true });
+    }
+
+    queueItem = await findOldestPending(channel.id);
+
+    if (!queueItem) {
+      console.log(`[Scheduler] Schedule ${schedule.id}: no pending videos for channel ${channel.channelName} — skipping slot`);
       await db.update(scheduledUploads).set({ lastRunAt: new Date() }).where(eq(scheduledUploads.id, schedule.id));
       return;
     }
-
-    let videoData: any;
-    let userVids: any[] = [];
-    try {
-      if (isTikTokUsername(urlOrHandle)) {
-        userVids = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath, proxyUrl).catch(() => fetchTikTokUserVideos(urlOrHandle, { proxyUrl }));
-        if (!userVids.length) {
-          console.warn(`[Scheduler] Schedule ${schedule.id}: TikTok user ${urlOrHandle} has no videos`);
-          return;
-        }
-        videoData = userVids[0];
-      } else {
-        videoData = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath, proxyUrl).catch(() => fetchTikTokVideo(urlOrHandle, { proxyUrl }));
-      }
-    } catch (fetchErr: any) {
-      const realErr = isRealTikError(fetchErr?.message || "");
-      if (realErr) {
-        console.error(`[Scheduler] Schedule ${schedule.id}: TikTok account error: ${getErrorMessage(fetchErr)}`);
-        await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, source.id));
-        await createNotification(schedule.userId, "source_error", `TikTok source "${source.accountHandle || source.accountUrl}" has errors: ${getErrorMessage(fetchErr).slice(0, 150)}`, source.id);
-        await db.update(scheduledUploads).set({ lastRunAt: new Date() }).where(eq(scheduledUploads.id, schedule.id));
-      } else {
-        console.warn(`[Scheduler] Schedule ${schedule.id}: TikTok fetch transient failure (will retry next cycle): ${getErrorMessage(fetchErr)}`);
-      }
-      return;
-    }
-
-    // Try next video if latest is already used (uploaded/pending) for this channel
-    if (userVids.length > 0) {
-      const existingVids = await db.select({ sourceVideoId: videoQueue.sourceVideoId })
-        .from(videoQueue)
-        .where(and(
-          eq(videoQueue.targetChannelId, channel.id),
-          eq(videoQueue.status, "pending"),
-          isNotNull(videoQueue.sourceVideoId)
-        ));
-      const usedIds = new Set(existingVids.map(v => v.sourceVideoId));
-      const notUsed = userVids.find((v: any) => !usedIds.has(v.id));
-      if (!notUsed) {
-        const allUsed = await db.select({ sourceVideoId: videoQueue.sourceVideoId }).from(videoQueue)
-          .where(and(eq(videoQueue.targetChannelId, channel.id), isNotNull(videoQueue.sourceVideoId)));
-        const allUsedIds = new Set(allUsed.map((v: any) => v.sourceVideoId));
-        if (userVids.every((v: any) => allUsedIds.has(v.id))) {
-          await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, source.id));
-          console.log(`[Scheduler] Schedule ${schedule.id}: source ${source.accountHandle} exhausted — all ${userVids.length} videos used, setting status=error`);
-          await createNotification(schedule.userId, "new_source", `Source "${source.accountHandle}" has no more new videos. All ${userVids.length} videos already used.`, source.id);
-          await db.update(scheduledUploads).set({ lastRunAt: new Date() }).where(eq(scheduledUploads.id, schedule.id));
-        } else {
-          console.log(`[Scheduler] Schedule ${schedule.id}: all ${userVids.length} TikTok videos already pending, will retry next cycle`);
-        }
-        return;
-      }
-      videoData = notUsed;
-    }
-
-    [queueItem] = await db.insert(videoQueue).values({
-      userId: schedule.userId,
-      sourceId: source.id,
-      targetChannelId: schedule.channelId,
-      sourceUrl: `${videoData.authorUrl}/video/${videoData.id}`,
-      sourceVideoId: videoData.id,
-      sourcePlatform: source.platform,
-      title: videoData.title,
-      thumbnailUrl: videoData.coverUrl,
-      srcViews: videoData.playCount || 0,
-      srcLikes: videoData.likeCount || 0,
-      status: "pending",
-    }).returning();
   } else if (!queueItem.sourceVideoId && queueItem.sourceUrl) {
     const backfilled = extractTikTokId(queueItem.sourceUrl);
     if (backfilled) {
@@ -703,332 +640,192 @@ async function processContinuousUploads() {
   }
 }
 
-async function processAutoRefill() {
-  const allSources = await db.select().from(sources);
-
-  for (const src of allSources) {
-    try {
-      const filter = (src.contentFilter as any) || {};
-      if (filter.autoRefillEnabled === false) continue;
-
-      let workspaceId: string | null = null;
-
-      // Auth sync: unauthorized channel → source error; recovered → source active
-      if (src.linkedChannelId) {
-        const [ch] = await db.select({ authStatus: channels.authStatus, workspaceId: channels.workspaceId })
-          .from(channels).where(eq(channels.id, src.linkedChannelId));
-        if (!ch || ch.authStatus !== "authorized") {
-          if (src.status !== "error") {
-            await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
-            console.warn(`[AutoRefill] Source ${src.accountHandle || src.id}: linked channel ${src.linkedChannelId} auth=${ch?.authStatus} — setting status=error`);
-          }
-          continue;
-        }
-        workspaceId = ch.workspaceId;
-        if (src.status === "error") {
-          await db.update(sources).set({ status: "active", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
-          console.log(`[AutoRefill] Source ${src.accountHandle || src.id}: linked channel authorized — recovered to active, refilling...`);
-        }
-      }
-
-      const cookiesPath = await resolveCookiesPath(workspaceId);
-      const proxyUrl = await resolveProxyUrl(src.proxyId);
-
-      const maxAgeMinutes = Math.min(filter.maxAge || 10080, 525600);
-      const sortBy = filter.sortBy || "oldest";
-      const minViews = Math.max(filter.minViews || 0, 0);
-
-      const pendingCount = (await db.select({ id: videoQueue.id }).from(videoQueue)
-        .where(and(eq(videoQueue.sourceId, src.id), eq(videoQueue.status, "pending")))).length;
-
-      // Don't refill if already at or above 5 pending
-      if (pendingCount >= 5) {
-        console.log(`[AutoRefill] Source ${src.accountHandle || src.id}: ${pendingCount} pending (>=5) — skipping refill`);
-        continue;
-      }
-
-      const urlOrHandle = src.accountHandle || src.accountUrl;
-      if (!urlOrHandle) continue;
-
-      if (refillThrottle[src.id] && Date.now() < refillThrottle[src.id]) continue;
-
-      let allVideos: any[] = [];
-      const MAX_YTDLP_RETRIES = 2;
-      let lastFetchErr: any;
-      let ytdlpFailed = false;
-      for (let attempt = 1; attempt <= MAX_YTDLP_RETRIES; attempt++) {
-        try {
-          if (isTikTokUsername(urlOrHandle)) {
-            allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath, proxyUrl);
-          } else {
-            const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath, proxyUrl);
-            allVideos = [single];
-          }
-          break;
-        } catch (fetchErr: any) {
-          lastFetchErr = fetchErr;
-          if (isRealTikError(fetchErr?.message || "")) { ytdlpFailed = true; break; }
-          if (attempt < MAX_YTDLP_RETRIES) {
-            const delay = Math.min(5000 * Math.pow(2, attempt - 1), 30000);
-            console.warn(`[AutoRefill] yt-dlp attempt ${attempt}/${MAX_YTDLP_RETRIES} failed for ${urlOrHandle}: ${fetchErr.message}, retrying in ${delay}ms...`);
-            await new Promise(r => setTimeout(r, delay));
-          } else {
-            ytdlpFailed = true;
-          }
-        }
-      }
-      // Fallback to tikwm API if yt-dlp fails
-      if (allVideos.length === 0 && ytdlpFailed) {
-        try {
-          console.log(`[AutoRefill] yt-dlp failed for ${urlOrHandle}, falling back to tikwm API...`);
-          if (isTikTokUsername(urlOrHandle)) {
-            allVideos = await fetchTikTokUserVideos(urlOrHandle, { proxyUrl });
-          } else {
-            const single = await fetchTikTokVideo(urlOrHandle, { proxyUrl });
-            allVideos = [single];
-          }
-          console.log(`[AutoRefill] tikwm fallback succeeded: ${allVideos.length} videos for ${urlOrHandle}`);
-        } catch (tikwmErr: any) {
-          console.warn(`[AutoRefill] tikwm fallback also failed for ${urlOrHandle}: ${tikwmErr.message}`);
-        }
-      }
-      if (allVideos.length === 0) {
-        console.warn(`[AutoRefill] Source ${src.accountHandle || src.id}: all fetch attempts returned 0 videos. yt-dlp err: ${lastFetchErr?.message || "none"}, ytdlpFailed=${ytdlpFailed}`);
-        if (lastFetchErr && isRealTikError(lastFetchErr?.message || "")) {
-          await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
-        } else {
-          await db.update(sources).set({ status: "empty", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
-        }
-        refillThrottle[src.id] = Date.now() + REFILL_THROTTLE_MS;
-        continue;
-      }
-      await db.update(sources).set({ status: "active", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
-
-      const existing = await db.select({ sourceVideoId: videoQueue.sourceVideoId }).from(videoQueue)
-        .where(and(eq(videoQueue.sourceId, src.id), sql`${videoQueue.status} IN ('pending', 'processing', 'uploaded', 'failed')`, isNotNull(videoQueue.sourceVideoId)));
-      const existingIds = new Set(existing.map((q: any) => q.sourceVideoId));
-
-      let available = allVideos.filter((v: any) => !existingIds.has(v.id));
-
-      // All videos already queued
-      if (available.length === 0) {
-        if (pendingCount > 0) {
-          console.log(`[AutoRefill] Source ${src.accountHandle || src.id}: ${pendingCount} pending, all ${allVideos.length} videos already in queue — skipping`);
-        } else {
-          console.log(`[AutoRefill] Source ${src.accountHandle || src.id}: all ${allVideos.length} videos processed — setting status=error`);
-          await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
-        }
-        refillThrottle[src.id] = Date.now() + REFILL_THROTTLE_MS;
-        continue;
-      }
-
-      // Filter by maxAge
-      if (maxAgeMinutes > 0) {
-        const cutoffMs = Date.now() - maxAgeMinutes * 60 * 1000;
-        available = available.filter((v: any) => {
-          if (v.timestamp) return v.timestamp * 1000 >= cutoffMs;
-          if (v.upload_date) {
-            if (maxAgeMinutes < 1440) return true;
-            const year = parseInt(v.upload_date.slice(0, 4));
-            const month = parseInt(v.upload_date.slice(4, 6)) - 1;
-            const day = parseInt(v.upload_date.slice(6, 8));
-            const dayCutoff = new Date(cutoffMs);
-            dayCutoff.setHours(0, 0, 0, 0);
-            return new Date(year, month, day) >= dayCutoff;
-          }
-          return true;
-        });
-      }
-
-      if (sortBy === "all" || sortBy === "most_recent") {
-        if (minViews > 0) available = available.filter((v: any) => (v.likeCount || 0) >= minViews);
-      } else if (sortBy === "oldest") {
-        if (minViews > 0) available = available.filter((v: any) => (v.likeCount || 0) >= minViews);
-        available.reverse();
-      } else if (sortBy === "most_viewed") {
-        if (minViews > 0) available = available.filter((v: any) => (v.likeCount || 0) >= minViews);
-        available.sort((a: any, b: any) => (b.likeCount || 0) - (a.likeCount || 0));
-      }
-
-      const queueAmount = Math.max(0, 5 - pendingCount);
-      console.log(`[AutoRefill] Source ${src.accountHandle || src.id}: ${pendingCount} pending, ${available.length} new after filtering, need ${queueAmount} to fill to 5`);
-      const toQueue = available.slice(0, queueAmount);
-      if (toQueue.length === 0) {
-        refillThrottle[src.id] = Date.now() + REFILL_THROTTLE_MS;
-        continue;
-      }
-
-      for (const video of toQueue) {
-        await db.insert(videoQueue).values({
-          userId: src.userId,
-          sourceId: src.id,
-          targetChannelId: src.linkedChannelId || undefined,
-          sourceUrl: `${video.authorUrl}/video/${video.id}`,
-          sourceVideoId: video.id,
-          sourcePlatform: src.platform,
-          title: video.title,
-          thumbnailUrl: video.coverUrl,
-          srcViews: video.playCount || 0,
-          srcLikes: video.likeCount || 0,
-          status: "pending",
-        }).returning();
-      }
-      console.log(`[AutoRefill] Queued ${toQueue.length} videos for source ${src.accountHandle || src.id} (now ${pendingCount + toQueue.length} total pending)`);
-    } catch (srcErr: any) {
-      if (isRealTikError(srcErr?.message || "")) {
-        try { await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id)); } catch {}
-      } else {
-        console.warn(`[AutoRefill] Source ${src.accountHandle || src.id} transient error: ${getErrorMessage(srcErr)}`);
-      }
-    }
-    await sleep(6000);
-  }
+export interface RefillResult {
+  queued: number;
+  pendingBefore: number;
+  pendingAfter: number;
+  exhausted: boolean;
+  skipped: boolean;
 }
 
 /**
- * Trigger immediate refill for a specific source (used after video upload)
- * Bypasses throttle and queues up to minQueue - pendingCount videos
+ * Centralized function to fill a source's pending queue up to maxPerSource.
+ * Uses pg_try_advisory_xact_lock to prevent concurrent refills of the same source.
+ * Re-checks pending count before each individual INSERT to stay within limit.
+ * Checks plan queueSize limit.
+ * Respects refillThrottle unless skipThrottle is true.
  */
-export async function triggerSourceRefill(sourceId: string): Promise<void> {
-  try {
-    const [src] = await db.select().from(sources).where(eq(sources.id, sourceId));
-    if (!src) { console.warn(`[TriggerRefill] Source ${sourceId} not found`); return; }
+export async function refillSourceToLimit(
+  sourceId: string,
+  options?: { maxPerSource?: number; skipThrottle?: boolean }
+): Promise<RefillResult> {
+  const maxPerSource = options?.maxPerSource ?? 5;
+  const skipThrottle = options?.skipThrottle ?? false;
+  const def = { queued: 0, pendingBefore: 0, pendingAfter: 0, exhausted: false, skipped: true };
 
-    const filter = (src.contentFilter as any) || {};
-    if (filter.autoRefillEnabled === false) { console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: autoRefill not enabled`); return; }
+  if (!skipThrottle && refillThrottle[sourceId] && Date.now() < refillThrottle[sourceId]) {
+    return { ...def, skipped: true };
+  }
 
-    let workspaceId: string | null = null;
+  const [lockRow] = await db.execute(sql`SELECT pg_try_advisory_xact_lock(hashtext(${sourceId})::bigint) AS locked`);
+  if (!lockRow || (lockRow as any).locked !== true) {
+    return { ...def, skipped: true };
+  }
 
-    // Check channel is authorized
-    if (src.linkedChannelId) {
-      const [ch] = await db.select({ authStatus: channels.authStatus, workspaceId: channels.workspaceId })
-        .from(channels).where(eq(channels.id, src.linkedChannelId));
-      if (!ch || ch.authStatus !== "authorized") { console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: channel not authorized (${ch?.authStatus})`); return; }
-      workspaceId = ch.workspaceId;
-    }
+  const [src] = await db.select().from(sources).where(eq(sources.id, sourceId));
+  if (!src) return def;
 
-    const cookiesPath = await resolveCookiesPath(workspaceId);
-    const proxyUrl = await resolveProxyUrl(src.proxyId);
+  const filter = (src.contentFilter as any) || {};
+  if (filter.autoRefillEnabled === false) return def;
 
-    const maxAgeMinutes = Math.min(filter.maxAge || 10080, 525600);
-    const sortBy = filter.sortBy || "oldest";
-    const minViews = Math.max(filter.minViews || 0, 0);
-
-    const urlOrHandle = src.accountHandle || src.accountUrl;
-    if (!urlOrHandle) { console.warn(`[TriggerRefill] Source ${src.id}: no handle/URL`); return; }
-
-    let allVideos: any[] = [];
-    const MAX_YTDLP_RETRIES = 2;
-    let lastFetchErr: any;
-    let ytdlpFailed = false;
-    for (let attempt = 1; attempt <= MAX_YTDLP_RETRIES; attempt++) {
-      try {
-        if (isTikTokUsername(urlOrHandle)) {
-          allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath, proxyUrl);
-        } else {
-          const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath, proxyUrl);
-          allVideos = [single];
-        }
-        break;
-      } catch (err: any) {
-        lastFetchErr = err;
-        if (isRealTikError(err?.message || "")) { ytdlpFailed = true; break; }
-        if (attempt < MAX_YTDLP_RETRIES) {
-          const delay = Math.min(5000 * Math.pow(2, attempt - 1), 30000);
-          console.warn(`[TriggerRefill] yt-dlp attempt ${attempt}/${MAX_YTDLP_RETRIES} failed for ${urlOrHandle}: ${err.message}, retrying in ${delay}ms...`);
-          await new Promise(r => setTimeout(r, delay));
-        } else {
-          ytdlpFailed = true;
-        }
-      }
-    }
-    // Fallback to tikwm API if yt-dlp fails
-    if (allVideos.length === 0 && ytdlpFailed) {
-      try {
-        console.log(`[TriggerRefill] yt-dlp failed for ${urlOrHandle}, falling back to tikwm API...`);
-        if (isTikTokUsername(urlOrHandle)) {
-          allVideos = await fetchTikTokUserVideos(urlOrHandle, { proxyUrl });
-        } else {
-          const single = await fetchTikTokVideo(urlOrHandle, { proxyUrl });
-          allVideos = [single];
-        }
-        console.log(`[TriggerRefill] tikwm fallback succeeded: ${allVideos.length} videos for ${urlOrHandle}`);
-      } catch (tikwmErr: any) {
-        console.warn(`[TriggerRefill] tikwm fallback also failed for ${urlOrHandle}: ${tikwmErr.message}`);
-      }
-    }
-    if (allVideos.length === 0) {
-      console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: all fetch attempts failed. yt-dlp err: ${lastFetchErr?.message || "none"}, ytdlpFailed=${ytdlpFailed}`);
-      return;
-    }
-
-    console.log(`[TriggerRefill] Source ${src.accountHandle || src.id}: fetched ${allVideos.length} videos total`);
-
-    const pendingCount = (await db.select({ id: videoQueue.id }).from(videoQueue)
-      .where(and(eq(videoQueue.sourceId, src.id), eq(videoQueue.status, "pending")))).length;
-
-    // Don't queue more if already at or above 5 pending
-    if (pendingCount >= 5) {
-      console.log(`[TriggerRefill] Source ${src.accountHandle || src.id}: ${pendingCount} pending (>=5) — skipping refill`);
-      return;
-    }
-
-    const existing = await db.select({ sourceVideoId: videoQueue.sourceVideoId }).from(videoQueue)
-      .where(and(eq(videoQueue.sourceId, src.id), sql`${videoQueue.status} IN ('pending', 'processing', 'uploaded', 'failed')`, isNotNull(videoQueue.sourceVideoId)));
-    const existingIds = new Set(existing.map((q: any) => q.sourceVideoId));
-
-    let available = allVideos.filter((v: any) => !existingIds.has(v.id));
-
-    // Filter by maxAge
-    if (maxAgeMinutes > 0) {
-      const cutoffMs = Date.now() - maxAgeMinutes * 60 * 1000;
-      available = available.filter((v: any) => {
-        if (v.timestamp) return v.timestamp * 1000 >= cutoffMs;
-        if (v.upload_date) {
-          if (maxAgeMinutes < 1440) return true;
-          const year = parseInt(v.upload_date.slice(0, 4));
-          const month = parseInt(v.upload_date.slice(4, 6)) - 1;
-          const day = parseInt(v.upload_date.slice(6, 8));
-          const dayCutoff = new Date(cutoffMs);
-          dayCutoff.setHours(0, 0, 0, 0);
-          return new Date(year, month, day) >= dayCutoff;
-        }
-        return true;
-      });
-    }
-
-    if (sortBy === "all" || sortBy === "most_recent") {
-      if (minViews > 0) available = available.filter((v: any) => (v.likeCount || 0) >= minViews);
-    } else if (sortBy === "oldest") {
-      if (minViews > 0) available = available.filter((v: any) => (v.likeCount || 0) >= minViews);
-      available.reverse();
-    } else if (sortBy === "most_viewed") {
-      if (minViews > 0) available = available.filter((v: any) => (v.likeCount || 0) >= minViews);
-      available.sort((a: any, b: any) => (b.likeCount || 0) - (a.likeCount || 0));
-    }
-
-    // Check exhaustion: all videos from TikTok are already used
-    if (available.length === 0) {
-      const allUsed = await db.select({ sourceVideoId: videoQueue.sourceVideoId }).from(videoQueue)
-        .where(and(eq(videoQueue.sourceId, src.id), isNotNull(videoQueue.sourceVideoId)));
-      const allUsedIds = new Set(allUsed.map((q: any) => q.sourceVideoId));
-      if (allVideos.length > 0 && allVideos.every((v: any) => allUsedIds.has(v.id))) {
+  let workspaceId: string | null = null;
+  if (src.linkedChannelId) {
+    const [ch] = await db.select({ authStatus: channels.authStatus, workspaceId: channels.workspaceId })
+      .from(channels).where(eq(channels.id, src.linkedChannelId));
+    if (!ch || ch.authStatus !== "authorized") {
+      if (src.status !== "error") {
         await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
-        console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: all ${allVideos.length} videos exhausted — setting status=error`);
-      } else {
-        console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: no new videos after filtering`);
       }
-      return;
+      return def;
     }
-
-    const queueAmount = Math.max(0, 5 - pendingCount);
-    const toQueue = available.slice(0, queueAmount);
-    if (toQueue.length === 0) {
-      console.warn(`[TriggerRefill] Source ${src.accountHandle || src.id}: no videos to queue after filtering`);
-      return;
+    workspaceId = ch.workspaceId;
+    if (src.status === "error") {
+      await db.update(sources).set({ status: "active", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
     }
+  }
 
-    for (const video of toQueue) {
+  const pendingCount = (await db.select({ id: videoQueue.id }).from(videoQueue)
+    .where(and(eq(videoQueue.sourceId, sourceId), eq(videoQueue.status, "pending")))).length;
+
+  if (pendingCount >= maxPerSource) {
+    return { ...def, pendingBefore: pendingCount, pendingAfter: pendingCount, skipped: true };
+  }
+
+  const planCheck = await checkQueueSizeLimit(src.userId);
+  if (!planCheck.allowed) {
+    console.warn(`[Refill] Source ${src.accountHandle || src.id}: plan queueSize limit (${planCheck.current}/${planCheck.limit})`);
+    return { ...def, pendingBefore: pendingCount, pendingAfter: pendingCount, skipped: true };
+  }
+
+  const cookiesPath = await resolveCookiesPath(workspaceId);
+  const proxyUrl = await resolveProxyUrl(src.proxyId);
+
+  const urlOrHandle = src.accountHandle || src.accountUrl;
+  if (!urlOrHandle) return { ...def, pendingBefore: pendingCount, pendingAfter: pendingCount, skipped: true };
+
+  const maxAgeMinutes = Math.min(filter.maxAge || 10080, 525600);
+  const sortBy = filter.sortBy || "oldest";
+  const minViews = Math.max(filter.minViews || 0, 0);
+
+  let allVideos: any[] = [];
+  const MAX_RETRIES = 2;
+  let lastFetchErr: any;
+  let ytdlpFailed = false;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (isTikTokUsername(urlOrHandle)) {
+        allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath, proxyUrl);
+      } else {
+        allVideos = [await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath, proxyUrl)];
+      }
+      break;
+    } catch (err: any) {
+      lastFetchErr = err;
+      if (isRealTikError(err?.message || "")) { ytdlpFailed = true; break; }
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, Math.min(5000 * Math.pow(2, attempt - 1), 30000)));
+      } else {
+        ytdlpFailed = true;
+      }
+    }
+  }
+  if (allVideos.length === 0 && ytdlpFailed) {
+    try {
+      if (isTikTokUsername(urlOrHandle)) {
+        allVideos = await fetchTikTokUserVideos(urlOrHandle, { proxyUrl });
+      } else {
+        allVideos = [await fetchTikTokVideo(urlOrHandle, { proxyUrl })];
+      }
+    } catch (tikwmErr: any) {
+      console.warn(`[Refill] tikwm fallback failed for ${urlOrHandle}: ${tikwmErr.message}`);
+    }
+  }
+
+  if (allVideos.length === 0) {
+    if (lastFetchErr && isRealTikError(lastFetchErr?.message || "")) {
+      await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
+    } else if (pendingCount === 0) {
+      await db.update(sources).set({ status: "empty", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
+    }
+    if (!skipThrottle) refillThrottle[sourceId] = Date.now() + REFILL_THROTTLE_MS;
+    return { ...def, pendingBefore: pendingCount, pendingAfter: pendingCount, exhausted: true };
+  }
+
+  await db.update(sources).set({ status: "active", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
+
+  const existing = await db.select({ sourceVideoId: videoQueue.sourceVideoId }).from(videoQueue)
+    .where(and(eq(videoQueue.sourceId, src.id), sql`${videoQueue.status} IN ('pending', 'processing', 'uploaded', 'failed')`, isNotNull(videoQueue.sourceVideoId)));
+  const existingIds = new Set(existing.map((q: any) => q.sourceVideoId));
+
+  let available = allVideos.filter((v: any) => !existingIds.has(v.id));
+
+  if (available.length === 0) {
+    const allUsed = await db.select({ sourceVideoId: videoQueue.sourceVideoId }).from(videoQueue)
+      .where(and(eq(videoQueue.sourceId, src.id), isNotNull(videoQueue.sourceVideoId)));
+    const allUsedIds = new Set(allUsed.map((q: any) => q.sourceVideoId));
+    if (allVideos.length > 0 && allVideos.every((v: any) => allUsedIds.has(v.id))) {
+      await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
+      console.warn(`[Refill] Source ${src.accountHandle || src.id}: all ${allVideos.length} videos exhausted`);
+      if (!skipThrottle) refillThrottle[sourceId] = Date.now() + REFILL_THROTTLE_MS;
+      return { ...def, pendingBefore: pendingCount, pendingAfter: pendingCount, exhausted: true };
+    }
+    if (!skipThrottle) refillThrottle[sourceId] = Date.now() + REFILL_THROTTLE_MS;
+    return { ...def, pendingBefore: pendingCount, pendingAfter: pendingCount, skipped: true };
+  }
+
+  if (maxAgeMinutes > 0) {
+    const cutoffMs = Date.now() - maxAgeMinutes * 60 * 1000;
+    available = available.filter((v: any) => {
+      if (v.timestamp) return v.timestamp * 1000 >= cutoffMs;
+      if (v.upload_date) {
+        if (maxAgeMinutes < 1440) return true;
+        const year = parseInt(v.upload_date.slice(0, 4));
+        const month = parseInt(v.upload_date.slice(4, 6)) - 1;
+        const day = parseInt(v.upload_date.slice(6, 8));
+        return new Date(year, month, day) >= new Date(cutoffMs);
+      }
+      return true;
+    });
+  }
+
+  if (sortBy === "most_viewed") {
+    if (minViews > 0) available = available.filter((v: any) => (v.likeCount || 0) >= minViews);
+    available.sort((a: any, b: any) => (b.likeCount || 0) - (a.likeCount || 0));
+  } else if (sortBy === "oldest") {
+    if (minViews > 0) available = available.filter((v: any) => (v.likeCount || 0) >= minViews);
+    available.reverse();
+  } else {
+    if (minViews > 0) available = available.filter((v: any) => (v.likeCount || 0) >= minViews);
+  }
+
+  const queueAmount = Math.max(0, maxPerSource - pendingCount);
+  const toQueue = available.slice(0, queueAmount);
+
+  if (toQueue.length === 0) {
+    if (!skipThrottle) refillThrottle[sourceId] = Date.now() + REFILL_THROTTLE_MS;
+    return { ...def, pendingBefore: pendingCount, pendingAfter: pendingCount, skipped: true };
+  }
+
+  let inserted = 0;
+  for (const video of toQueue) {
+    const currentPending = (await db.select({ id: videoQueue.id }).from(videoQueue)
+      .where(and(eq(videoQueue.sourceId, sourceId), eq(videoQueue.status, "pending")))).length;
+    if (currentPending >= maxPerSource) break;
+
+    const planNow = await checkQueueSizeLimit(src.userId);
+    if (!planNow.allowed) break;
+
+    try {
       await db.insert(videoQueue).values({
         userId: src.userId,
         sourceId: src.id,
@@ -1041,9 +838,63 @@ export async function triggerSourceRefill(sourceId: string): Promise<void> {
         srcViews: video.playCount || 0,
         srcLikes: video.likeCount || 0,
         status: "pending",
-      }).returning();
+      });
+      inserted++;
+    } catch (insertErr: any) {
+      if (insertErr?.code === "23505") continue;
+      throw insertErr;
     }
-    console.log(`[TriggerRefill] Queued ${toQueue.length} videos for source ${src.accountHandle || src.id} (post-upload, now ${pendingCount + toQueue.length} total pending)`);
+  }
+
+  const totalAfter = pendingCount + inserted;
+  console.log(`[Refill] Source ${src.accountHandle || src.id}: queued ${inserted} (pending ${pendingCount}→${totalAfter})`);
+
+  if (!skipThrottle) refillThrottle[sourceId] = Date.now() + REFILL_THROTTLE_MS;
+
+  return { queued: inserted, pendingBefore: pendingCount, pendingAfter: totalAfter, exhausted: false, skipped: false };
+}
+
+async function processAutoRefill() {
+  const allSources = await db.select().from(sources);
+
+  for (const src of allSources) {
+    try {
+      const filter = (src.contentFilter as any) || {};
+      if (filter.autoRefillEnabled === false) continue;
+
+      if (refillThrottle[src.id] && Date.now() < refillThrottle[src.id]) continue;
+
+      const result = await refillSourceToLimit(src.id, { maxPerSource: 5, skipThrottle: false });
+
+      if (!result.skipped && result.queued > 0) {
+        console.log(`[AutoRefill] Source ${src.accountHandle || src.id}: queued ${result.queued} (pending ${result.pendingBefore}→${result.pendingAfter})`);
+      } else if (result.exhausted) {
+        console.warn(`[AutoRefill] Source ${src.accountHandle || src.id}: exhausted`);
+      }
+    } catch (srcErr: any) {
+      console.warn(`[AutoRefill] Source ${src.accountHandle || src.id} error: ${getErrorMessage(srcErr)}`);
+    }
+    await sleep(6000);
+  }
+}
+
+/**
+ * Trigger immediate refill for a specific source (used after video upload)
+ * Respects refill throttle to prevent hammering TikTok API.
+ */
+export async function triggerSourceRefill(sourceId: string): Promise<void> {
+  try {
+    if (refillThrottle[sourceId] && Date.now() < refillThrottle[sourceId]) return;
+
+    const result = await refillSourceToLimit(sourceId, { maxPerSource: 5, skipThrottle: false });
+
+    if (result.queued > 0) {
+      console.log(`[TriggerRefill] Source ${sourceId}: queued ${result.queued} (pending ${result.pendingBefore}→${result.pendingAfter})`);
+    } else if (result.skipped) {
+      console.log(`[TriggerRefill] Source ${sourceId}: skipped (pending=${result.pendingBefore})`);
+    } else if (result.exhausted) {
+      console.warn(`[TriggerRefill] Source ${sourceId}: exhausted`);
+    }
   } catch (err: any) {
     console.warn(`[TriggerRefill] Source ${sourceId} error: ${getErrorMessage(err)}`);
   }
