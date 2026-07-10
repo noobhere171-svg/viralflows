@@ -417,6 +417,7 @@ async function processSingleSchedule(schedule: any, channel: any) {
   }
 
   const cookiesPath = await resolveCookiesPath(channel.workspaceId);
+  const proxyUrl = await resolveProxyUrl(source.proxyId);
 
   // Auth sync: unauthorized channel → source error; recovered → source active
   if (channel.authStatus !== "authorized") {
@@ -466,14 +467,14 @@ async function processSingleSchedule(schedule: any, channel: any) {
     let userVids: any[] = [];
     try {
       if (isTikTokUsername(urlOrHandle)) {
-        userVids = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath).catch(() => fetchTikTokUserVideos(urlOrHandle));
+        userVids = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath, proxyUrl).catch(() => fetchTikTokUserVideos(urlOrHandle, { proxyUrl }));
         if (!userVids.length) {
           console.warn(`[Scheduler] Schedule ${schedule.id}: TikTok user ${urlOrHandle} has no videos`);
           return;
         }
         videoData = userVids[0];
       } else {
-        videoData = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath).catch(() => fetchTikTokVideo(urlOrHandle));
+        videoData = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath, proxyUrl).catch(() => fetchTikTokVideo(urlOrHandle, { proxyUrl }));
       }
     } catch (fetchErr: any) {
       const realErr = isRealTikError(fetchErr?.message || "");
@@ -644,9 +645,14 @@ async function retryFailedItems() {
 
 async function processContinuousUploads() {
   const allChannels = await db.select().from(channels).where(eq(channels.authStatus, "authorized"));
+  const scheduledChannelIds = new Set(
+    (await db.select({ channelId: scheduledUploads.channelId }).from(scheduledUploads).where(eq(scheduledUploads.active, true)))
+      .map(s => s.channelId).filter(Boolean)
+  );
 
   for (const channel of allChannels) {
     try {
+      if (scheduledChannelIds.has(channel.id)) continue;
       const maxPerDay = await getMaxVideosPerDayForChannel(channel.id);
       const todayCount = await getTodayUploadCountByChannel(channel.id);
       if (todayCount >= maxPerDay) continue;

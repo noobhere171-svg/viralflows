@@ -399,12 +399,12 @@ export async function fetchTikTokUserVideosViaYtDlp(username: string, cookiesPat
     flatPlaylist: true,
     dumpJson: true,
     noWarnings: true,
-    sleepInterval: 3,
-    socketTimeout: 60,
-    retries: 5,
+    socketTimeout: 30,
+    retries: 3,
+    maxDownloads: 50,
     cookies: cookiesPath,
     proxy: proxyUrl,
-  });
+  }, { timeout: 90000 });
 
   const lines = stdout.trim().split("\n").filter(Boolean);
   const videos: TikTokVideo[] = [];
@@ -439,11 +439,11 @@ export async function fetchTikTokVideoViaYtDlp(url: string, cookiesPath?: string
   const data = await ytdl(url, {
     noWarnings: true,
     noPlaylist: true,
-    socketTimeout: 60,
-    retries: 5,
+    socketTimeout: 30,
+    retries: 3,
     cookies: cookiesPath,
     proxy: proxyUrl,
-  }) as any;
+  }, { timeout: 90000 }) as any;
 
   const videoId = data.id || url.match(/video\/(\d+)/)?.[1] || randomUUID();
   const username = data.uploader_id || data.creator || data.channel || "unknown";
