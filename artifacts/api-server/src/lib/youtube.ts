@@ -65,11 +65,17 @@ export async function getOAuthTokens(
 export async function refreshAccessToken(
   clientId: string,
   clientSecret: string,
-  refreshToken: string
+  refreshToken: string,
+  proxyUrl?: string
 ): Promise<{ access_token: string; expiry_date: number }> {
   const { google } = await import("googleapis");
   const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
   oauth2Client.setCredentials({ refresh_token: refreshToken });
+  if (proxyUrl) {
+    const { HttpsProxyAgent } = await import("https-proxy-agent");
+    const { Gaxios } = await import("gaxios");
+    (oauth2Client as any).transporter = new Gaxios({ agent: new HttpsProxyAgent(proxyUrl) });
+  }
   const { credentials } = await oauth2Client.refreshAccessToken();
   return {
     access_token: credentials.access_token!,
@@ -81,7 +87,8 @@ async function getAuthClient(
   accessToken: string,
   refreshToken?: string,
   clientId?: string,
-  clientSecret?: string
+  clientSecret?: string,
+  proxyUrl?: string
 ): Promise<youtube_v3.Youtube> {
   const { google } = await import("googleapis");
   const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
@@ -89,6 +96,13 @@ async function getAuthClient(
     access_token: accessToken,
     refresh_token: refreshToken,
   });
+  if (proxyUrl) {
+    const { HttpsProxyAgent } = await import("https-proxy-agent");
+    const agent = new HttpsProxyAgent(proxyUrl);
+    const { Gaxios } = await import("gaxios");
+    (oauth2Client as any).transporter = new Gaxios({ agent });
+    return google.youtube({ version: "v3", auth: oauth2Client, agent } as any);
+  }
   return google.youtube({ version: "v3", auth: oauth2Client });
 }
 
@@ -106,6 +120,7 @@ export interface UploadOptions {
   clientSecret?: string;
   onProgress?: (bytes: number) => void;
   durationSeconds?: number;
+  proxyUrl?: string;
 }
 
 export async function uploadVideo(
@@ -115,7 +130,8 @@ export async function uploadVideo(
     options.accessToken,
     options.refreshToken,
     options.clientId,
-    options.clientSecret
+    options.clientSecret,
+    options.proxyUrl
   );
 
   const fileSize = (await readFile(options.videoPath)).length;

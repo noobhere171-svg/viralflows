@@ -143,8 +143,17 @@ export async function runUploadPipeline({
       throw new Error("Missing client_id or client_secret");
     }
 
+    // Resolve proxy for this user (used for download and/or upload)
+    let proxyUrl: string | undefined;
+    let proxyDbId: string | undefined;
+    const proxyInfo = await resolveGlobalProxyForUser(channel.userId);
+    if (proxyInfo) {
+      proxyUrl = proxyInfo.proxyUrl;
+      proxyDbId = proxyInfo.proxyId;
+    }
+
     if (tokens.expiry_date && Date.now() > tokens.expiry_date) {
-      const refreshed = await refreshAccessToken(clientId, clientSecret, tokens.refresh_token);
+      const refreshed = await refreshAccessToken(clientId, clientSecret, tokens.refresh_token, proxyInfo?.useForUpload ? proxyUrl : undefined);
       tokens.access_token = refreshed.access_token;
       tokens.expiry_date = refreshed.expiry_date;
       await writeJsonToFilebase(channelTokenPath, tokens).catch(() => {});
@@ -199,20 +208,10 @@ export async function runUploadPipeline({
       console.log(`[UploadPipeline] Using TikTok cookies for channel ${channel.channelName}`);
     }
 
-    let proxyUrl: string | undefined;
-    let proxyDbId: string | undefined;
-    const proxyInfo = await resolveGlobalProxyForUser(channel.userId);
-    if (proxyInfo?.useForDownload) {
-      proxyUrl = proxyInfo.proxyUrl;
-      proxyDbId = proxyInfo.proxyId;
-    }
-
-    localPath = await downloadVideo(downloadUrl, { cookiesPath, proxyUrl });
-
-    if (proxyDbId) {
-      await releaseGlobalProxy(proxyDbId).catch(() => {});
-      proxyDbId = undefined;
-    }
+    localPath = await downloadVideo(downloadUrl, {
+      cookiesPath,
+      proxyUrl: proxyInfo?.useForDownload ? proxyUrl : undefined,
+    });
 
     const { videoId: youtubeVideoId } = await withYoutubeUploadRetry({
       context: `${context} channel=${channel.channelName} item=${item.id}`,
@@ -228,6 +227,7 @@ export async function runUploadPipeline({
           refreshToken: tokens.refresh_token,
           clientId,
           clientSecret,
+          proxyUrl: proxyInfo?.useForUpload ? proxyUrl : undefined,
         }),
     });
 
@@ -350,6 +350,11 @@ export async function runUploadPipeline({
 
     console.log(`[UploadPipeline] (${context}) Uploaded "${item.title}" to ${channel.channelName}`);
     await createNotification(channel.userId, "upload_complete", `Video "${item.title}" uploaded to ${channel.channelName}.`, item.id);
+
+    // Release proxy after upload is complete
+    if (proxyDbId) {
+      await releaseGlobalProxy(proxyDbId).catch(() => {});
+    }
 
     // Trigger auto-refill for this channel's source after 30 seconds
     const sourceId = channel.sourceId;
