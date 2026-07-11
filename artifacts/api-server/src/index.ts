@@ -35,6 +35,20 @@ import { sql } from "drizzle-orm";
   }
 })();
 
+// Migration 0005: UNIQUE index on video_queue(source_id, source_video_id)
+(async () => {
+  try {
+    await db.execute(sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_vq_source_video_unique
+        ON video_queue(source_id, source_video_id)
+        WHERE source_video_id IS NOT NULL
+    `);
+    console.log("[DB] Migration 0005: queue unique index applied");
+  } catch (err: any) {
+    console.error(`[DB] Migration 0005 failed: ${err?.message || err}`);
+  }
+})();
+
 startDbKeepalive();
 
 import { startScheduler } from "./workers/scheduler.js";
