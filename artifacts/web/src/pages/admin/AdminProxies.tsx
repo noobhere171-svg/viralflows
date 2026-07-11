@@ -7,7 +7,7 @@ export default function AdminProxies() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
-  const [form, setForm] = useState({ ipAddress: "", port: "", protocol: "http", username: "", passwordEncrypted: "", assignedToPlan: "all", maxConcurrentUsers: 5 });
+  const [form, setForm] = useState({ ipAddress: "", port: "", protocol: "http", username: "", passwordEncrypted: "", assignedToPlan: "all", maxConcurrentUsers: 5, country: "", useForFetch: true, useForDownload: true, useForUpload: false });
   const [bulkText, setBulkText] = useState("");
 
   const fetchProxies = () => {
@@ -18,7 +18,7 @@ export default function AdminProxies() {
   const handleAdd = async () => {
     await api.post("/admin/proxies", { ...form, port: parseInt(form.port) || 8080 });
     setShowAdd(false);
-    setForm({ ipAddress: "", port: "", protocol: "http", username: "", passwordEncrypted: "", assignedToPlan: "all", maxConcurrentUsers: 5 });
+    setForm({ ipAddress: "", port: "", protocol: "http", username: "", passwordEncrypted: "", assignedToPlan: "all", maxConcurrentUsers: 5, country: "", useForFetch: true, useForDownload: true, useForUpload: false });
     fetchProxies();
   };
 
@@ -59,19 +59,22 @@ export default function AdminProxies() {
           <thead><tr className="border-b border-[#2a2a2a] text-left">
             <th className="px-4 py-3 text-zinc-400 font-medium">IP:Port</th>
             <th className="px-4 py-3 text-zinc-400 font-medium">Protocol</th>
+            <th className="px-4 py-3 text-zinc-400 font-medium">Country</th>
             <th className="px-4 py-3 text-zinc-400 font-medium">Status</th>
             <th className="px-4 py-3 text-zinc-400 font-medium">Speed</th>
             <th className="px-4 py-3 text-zinc-400 font-medium">Plan</th>
             <th className="px-4 py-3 text-zinc-400 font-medium">Users</th>
+            <th className="px-4 py-3 text-zinc-400 font-medium">Operations</th>
             <th className="px-4 py-3 text-zinc-400 font-medium">Actions</th>
           </tr></thead>
           <tbody>
-            {loading ? <tr><td colSpan={7} className="px-4 py-8 text-center text-zinc-500">Loading...</td></tr>
-            : proxies.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-zinc-500">No proxies</td></tr>
+            {loading ? <tr><td colSpan={9} className="px-4 py-8 text-center text-zinc-500">Loading...</td></tr>
+            : proxies.length === 0 ? <tr><td colSpan={9} className="px-4 py-8 text-center text-zinc-500">No proxies</td></tr>
             : proxies.map((p) => (
               <tr key={p.id} className="border-b border-[#2a2a2a]">
                 <td className="px-4 py-3 text-white font-mono">{p.ipAddress}:{p.port}</td>
                 <td className="px-4 py-3 text-zinc-300 uppercase">{p.protocol}</td>
+                <td className="px-4 py-3 text-zinc-400">{p.country || "-"}</td>
                 <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs ${p.status === "active" ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}`}>{p.status}</span></td>
                 <td className="px-4 py-3 text-zinc-400">{p.speedMs ? `${p.speedMs}ms` : "-"}</td>
                 <td className="px-4 py-3">
@@ -85,6 +88,14 @@ export default function AdminProxies() {
                   </select>
                 </td>
                 <td className="px-4 py-3 text-zinc-400">{p.currentUsers}/{p.maxConcurrentUsers}</td>
+                <td className="px-4 py-3">
+                  <div className="flex gap-2 text-xs">
+                    {p.useForFetch !== false && <span className="text-green-400" title="Fetch">F</span>}
+                    {p.useForDownload !== false && <span className="text-blue-400" title="Download">D</span>}
+                    {p.useForUpload && <span className="text-violet-400" title="Upload">U</span>}
+                    {p.useForFetch === false && p.useForDownload === false && !p.useForUpload && <span className="text-zinc-500">None</span>}
+                  </div>
+                </td>
                 <td className="px-4 py-3"><button onClick={() => handleDelete(p.id)} className="text-zinc-400 hover:text-red-400"><Trash2 size={14} /></button></td>
               </tr>
             ))}
@@ -111,6 +122,11 @@ export default function AdminProxies() {
                   <input value={form.port} onChange={(e) => setForm({ ...form, port: e.target.value })} placeholder="8080"
                     className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" />
                 </div>
+              </div>
+              <div>
+                <label className="text-zinc-400 text-sm">Country</label>
+                <input value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} placeholder="US / UK / DE / ..."
+                  className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -143,6 +159,23 @@ export default function AdminProxies() {
                   <label className="text-zinc-400 text-sm">Password (optional)</label>
                   <input type="password" value={form.passwordEncrypted} onChange={(e) => setForm({ ...form, passwordEncrypted: e.target.value })}
                     className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="text-zinc-400 text-sm block mb-1">Use for</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-sm text-zinc-300">
+                    <input type="checkbox" checked={form.useForFetch} onChange={(e) => setForm({ ...form, useForFetch: e.target.checked })} className="accent-violet-600" />
+                    Fetch
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-zinc-300">
+                    <input type="checkbox" checked={form.useForDownload} onChange={(e) => setForm({ ...form, useForDownload: e.target.checked })} className="accent-violet-600" />
+                    Download
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-zinc-300">
+                    <input type="checkbox" checked={form.useForUpload} onChange={(e) => setForm({ ...form, useForUpload: e.target.checked })} className="accent-violet-600" />
+                    Upload
+                  </label>
                 </div>
               </div>
               <button onClick={handleAdd} className="w-full py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700">Add Proxy</button>

@@ -16,6 +16,7 @@ import { uploadVideo, mapCategoryId, refreshAccessToken } from "../artifacts/api
 import { generateSeo } from "../artifacts/api-server/src/lib/llm.js";
 import { readJsonFromFilebase, writeJsonToFilebase, hasWorkspaceCookies, getWorkspaceCookiesPath } from "../artifacts/api-server/src/lib/filebase.js";
 import { triggerSourceRefill } from "../artifacts/api-server/src/workers/scheduler.js";
+import { resolveGlobalProxyForUser, releaseGlobalProxy } from "./plan-limits.js";
 
 
 export interface UploadPipelineParams {
@@ -198,7 +199,20 @@ export async function runUploadPipeline({
       console.log(`[UploadPipeline] Using TikTok cookies for channel ${channel.channelName}`);
     }
 
-    localPath = await downloadVideo(downloadUrl, { cookiesPath });
+    let proxyUrl: string | undefined;
+    let proxyDbId: string | undefined;
+    const proxyInfo = await resolveGlobalProxyForUser(channel.userId);
+    if (proxyInfo?.useForDownload) {
+      proxyUrl = proxyInfo.proxyUrl;
+      proxyDbId = proxyInfo.proxyId;
+    }
+
+    localPath = await downloadVideo(downloadUrl, { cookiesPath, proxyUrl });
+
+    if (proxyDbId) {
+      await releaseGlobalProxy(proxyDbId).catch(() => {});
+      proxyDbId = undefined;
+    }
 
     const { videoId: youtubeVideoId } = await withYoutubeUploadRetry({
       context: `${context} channel=${channel.channelName} item=${item.id}`,
@@ -349,6 +363,9 @@ export async function runUploadPipeline({
 
     return { success: true, youtubeVideoId };
   } catch (err) {
+    if (proxyDbId) {
+      await releaseGlobalProxy(proxyDbId).catch(() => {});
+    }
     await handleQueueItemFailure(db, videoQueue, queueItem.id, queueItem.retryCount ?? 0, err, context);
     console.error(`[UploadPipeline] (${context}) failed for ${queueItem.id}: ${getErrorMessage(err)}`);
     await createNotification(channel.userId, "upload_failed", `Upload failed for "${queueItem.title || "Untitled"}": ${getErrorMessage(err).slice(0, 200)}`, queueItem.id);

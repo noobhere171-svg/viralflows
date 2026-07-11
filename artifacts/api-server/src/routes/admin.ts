@@ -266,7 +266,7 @@ router.post("/proxies/bulk", async (req: AuthRequest, res) => {
 
 router.patch("/proxies/:id", async (req: AuthRequest, res) => {
   try {
-    const ALLOWED = ["status", "assignedToPlan", "maxConcurrentUsers", "speedMs"];
+    const ALLOWED = ["status", "assignedToPlan", "maxConcurrentUsers", "speedMs", "country", "useForFetch", "useForDownload", "useForUpload"];
     const safe: Record<string, any> = {};
     for (const key of ALLOWED) { if (key in req.body) safe[key] = req.body[key]; }
     if (Object.keys(safe).length === 0) return res.status(400).json({ error: "No valid fields" });

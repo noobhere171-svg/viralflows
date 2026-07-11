@@ -5,6 +5,7 @@ import { sources } from "../../../../lib/db/src/schema/sources.js";
 import { channels } from "../../../../lib/db/src/schema/channels.js";
 import { workspaces } from "../../../../lib/db/src/schema/workspaces.js";
 import { videoQueue } from "../../../../lib/db/src/schema/video-queue.js";
+import { proxies } from "../../../../lib/db/src/schema/proxies.js";
 import { operations } from "../../../../lib/db/src/schema/operations.js";
 import { eq, and, sql, isNotNull, inArray } from "drizzle-orm";
 import { fetchTikTokVideo, fetchTikTokUserVideos, fetchTikTokVideoViaYtDlp, fetchTikTokUserVideosViaYtDlp, isTikTokUsername } from "../lib/tiktok.js";
@@ -12,6 +13,22 @@ import { withTikwmRetry, isRealTikError } from "../../../../lib/rate-limiter.js"
 import { generateSeo } from "../lib/llm.js";
 import { hasWorkspaceCookies, getWorkspaceCookiesPath } from "../lib/filebase.js";
 import { refillSourceToLimit } from "../workers/scheduler.js";
+import { resolveGlobalProxyForUser, releaseGlobalProxy } from "../../../../lib/plan-limits.js";
+
+async function resolveSourceProxyUrl(source: typeof sources.$inferSelect): Promise<{ proxyUrl?: string; proxyDbId?: string }> {
+  if (source.proxyId) {
+    const [proxy] = await db.select().from(proxies).where(eq(proxies.id, source.proxyId));
+    if (proxy) {
+      const auth = proxy.username ? `${proxy.username}:${proxy.passwordEncrypted || ""}@` : "";
+      return { proxyUrl: `${proxy.protocol}://${auth}${proxy.ipAddress}:${proxy.port}` };
+    }
+  }
+  const resolved = await resolveGlobalProxyForUser(source.userId);
+  if (resolved?.useForFetch) {
+    return { proxyUrl: resolved.proxyUrl, proxyDbId: resolved.proxyId };
+  }
+  return {};
+}
 
 const router = Router();
 router.use(requireAuth);
@@ -62,21 +79,30 @@ router.get("/:id/videos", async (req: AuthRequest, res) => {
     const urlOrHandle = src.accountHandle || src.accountUrl;
     if (!urlOrHandle) return res.status(400).json({ error: "No handle/URL configured" });
 
+    const proxyResolved = await resolveSourceProxyUrl(src);
+    const proxyUrl = proxyResolved.proxyUrl;
+
     const fetchVideos = async () => {
       if (isTikTokUsername(urlOrHandle)) {
-        return await fetchTikTokUserVideosViaYtDlp(urlOrHandle).catch(() => fetchTikTokUserVideos(urlOrHandle));
+        return await fetchTikTokUserVideosViaYtDlp(urlOrHandle, undefined, proxyUrl).catch(() => fetchTikTokUserVideos(urlOrHandle, { proxyUrl }));
       }
-      return [await fetchTikTokVideoViaYtDlp(urlOrHandle).catch(() => fetchTikTokVideo(urlOrHandle))];
+      return [await fetchTikTokVideoViaYtDlp(urlOrHandle, undefined, proxyUrl).catch(() => fetchTikTokVideo(urlOrHandle, { proxyUrl }))];
     };
 
     let videos: Awaited<ReturnType<typeof fetchVideos>> = [];
     try {
       videos = await withTikwmRetry(fetchVideos);
     } catch (err: any) {
+      if (proxyResolved.proxyDbId) {
+        await releaseGlobalProxy(proxyResolved.proxyDbId).catch(() => {});
+      }
       if (isRealTikError(err?.message || "")) {
         return res.status(404).json({ error: err.message });
       }
       return res.status(502).json({ error: `TikTok fetch failed: ${err.message}` });
+    }
+    if (proxyResolved.proxyDbId) {
+      await releaseGlobalProxy(proxyResolved.proxyDbId).catch(() => {});
     }
     res.json(videos);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -93,12 +119,21 @@ router.post("/:id/queue-selected", async (req: AuthRequest, res) => {
     const urlOrHandle = src.accountHandle || src.accountUrl;
     if (!urlOrHandle) return res.status(400).json({ error: "No handle/URL configured" });
 
+    const proxyResolved = await resolveSourceProxyUrl(src);
+    const proxyUrl = proxyResolved.proxyUrl;
+
     let allVideos: Awaited<ReturnType<typeof fetchTikTokUserVideos>> = [];
-    if (isTikTokUsername(urlOrHandle)) {
-      allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle).catch(() => fetchTikTokUserVideos(urlOrHandle));
-    } else {
-      const single = await fetchTikTokVideoViaYtDlp(urlOrHandle).catch(() => fetchTikTokVideo(urlOrHandle));
-      allVideos = [single];
+    try {
+      if (isTikTokUsername(urlOrHandle)) {
+        allVideos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, undefined, proxyUrl).catch(() => fetchTikTokUserVideos(urlOrHandle, { proxyUrl }));
+      } else {
+        const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, undefined, proxyUrl).catch(() => fetchTikTokVideo(urlOrHandle, { proxyUrl }));
+        allVideos = [single];
+      }
+    } finally {
+      if (proxyResolved.proxyDbId) {
+        await releaseGlobalProxy(proxyResolved.proxyDbId).catch(() => {});
+      }
     }
 
     const selected = allVideos.filter(v => videoIds.includes(v.id));
@@ -257,20 +292,30 @@ router.post("/:id/sync", async (req: AuthRequest, res) => {
       }
     }
 
+    const proxyResolved = await resolveSourceProxyUrl(src);
+    const proxyUrl = proxyResolved.proxyUrl;
+
     let videos: Awaited<ReturnType<typeof fetchTikTokUserVideos>> = [];
 
     try {
       if (isTikTokUsername(urlOrHandle)) {
-        videos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath).catch(() => fetchTikTokUserVideos(urlOrHandle));
+        videos = await fetchTikTokUserVideosViaYtDlp(urlOrHandle, cookiesPath, proxyUrl).catch(() => fetchTikTokUserVideos(urlOrHandle, { proxyUrl }));
       } else {
-        const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath).catch(() => fetchTikTokVideo(urlOrHandle));
+        const single = await fetchTikTokVideoViaYtDlp(urlOrHandle, cookiesPath, proxyUrl).catch(() => fetchTikTokVideo(urlOrHandle, { proxyUrl }));
         videos = [single];
       }
     } catch (fetchErr: any) {
+      if (proxyResolved.proxyDbId) {
+        await releaseGlobalProxy(proxyResolved.proxyDbId).catch(() => {});
+      }
       if (isRealTikError(fetchErr?.message || "")) {
         await db.update(sources).set({ status: "error", lastSyncedAt: new Date() }).where(eq(sources.id, src.id));
       }
       return res.status(502).json({ error: `Failed to fetch videos: ${fetchErr.message}` });
+    }
+
+    if (proxyResolved.proxyDbId) {
+      await releaseGlobalProxy(proxyResolved.proxyDbId).catch(() => {});
     }
 
     if (videos.length === 0) {

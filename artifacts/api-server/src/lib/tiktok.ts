@@ -193,7 +193,7 @@ export async function fetchTikTokVideo(url: string, options: TikTokOptions = {})
   };
 }
 
-async function downloadViaYtDlp(tiktokUrl: string, tmpPath: string, cookiesPath?: string): Promise<void> {
+async function downloadViaYtDlp(tiktokUrl: string, tmpPath: string, cookiesPath?: string, proxyUrl?: string): Promise<void> {
   const outDir = tmpdir();
   const outTemplate = tmpPath.replace(/\.mp4$/, "");
   const baseName = outTemplate.split(/[/\\]/).pop()!;
@@ -205,6 +205,7 @@ async function downloadViaYtDlp(tiktokUrl: string, tmpPath: string, cookiesPath?
       format: "best",
       output: join(outDir, `${baseName}.%(ext)s`),
       cookies: cookiesPath,
+      proxy: proxyUrl,
     });
 
     const { readdir } = await import("fs/promises");
@@ -270,7 +271,7 @@ export async function downloadVideo(url: string, options: TikTokOptions = {}): P
 
   // Step 0: Try yt-dlp first (most reliable, handles TikTok challenges/cookies)
   try {
-    await downloadViaYtDlp(url, tmpPath, options.cookiesPath);
+    await downloadViaYtDlp(url, tmpPath, options.cookiesPath, options.proxyUrl);
     return tmpPath;
   } catch (err: any) {
     console.warn(`[TikTok] yt-dlp failed for ${url.slice(0, 60)}: ${err.message}`);

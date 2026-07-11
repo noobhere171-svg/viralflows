@@ -19,7 +19,7 @@ import { getErrorMessage } from "../../../../lib/errors.js";
 import { sendAlert } from "../../../../lib/alerts.js";
 import { createNotification } from "../../../../lib/notifications.js";
 import { runUploadPipeline } from "../../../../lib/upload-pipeline.js";
-import { checkQueueSizeLimit } from "../../../../lib/plan-limits.js";
+import { checkQueueSizeLimit, resolveGlobalProxyForUser, releaseGlobalProxy } from "../../../../lib/plan-limits.js";
 
 const POLL_INTERVAL_MS = 60_000;
 const UPLOAD_TIME_WINDOW_MIN = Number(process.env.UPLOAD_TIME_WINDOW_MIN ?? 5);
@@ -46,12 +46,21 @@ async function resolveCookiesPath(workspaceId?: string | null): Promise<string |
   return exists ? getWorkspaceCookiesPath(workspaceId) : undefined;
 }
 
-async function resolveProxyUrl(proxyId?: string | null): Promise<string | undefined> {
-  if (!proxyId) return undefined;
-  const [proxy] = await db.select().from(proxies).where(eq(proxies.id, proxyId));
-  if (!proxy) return undefined;
-  const auth = proxy.username ? `${proxy.username}:${proxy.passwordEncrypted || ""}@` : "";
-  return `${proxy.protocol}://${auth}${proxy.ipAddress}:${proxy.port}`;
+async function resolveProxyUrl(proxyId?: string | null, userId?: string): Promise<{ proxyUrl: string; proxyDbId?: string } | undefined> {
+  if (proxyId) {
+    const [proxy] = await db.select().from(proxies).where(eq(proxies.id, proxyId));
+    if (proxy) {
+      const auth = proxy.username ? `${proxy.username}:${proxy.passwordEncrypted || ""}@` : "";
+      return { proxyUrl: `${proxy.protocol}://${auth}${proxy.ipAddress}:${proxy.port}` };
+    }
+  }
+  if (userId) {
+    const resolved = await resolveGlobalProxyForUser(userId);
+    if (resolved && resolved.useForFetch) {
+      return { proxyUrl: resolved.proxyUrl, proxyDbId: resolved.proxyId };
+    }
+  }
+  return undefined;
 }
 
 const GCP_DAILY_LIMIT = Number(process.env.GCP_DAILY_LIMIT ?? 4);
@@ -708,7 +717,8 @@ export async function refillSourceToLimit(
   }
 
   const cookiesPath = await resolveCookiesPath(workspaceId);
-  const proxyUrl = await resolveProxyUrl(src.proxyId);
+  const proxyRes = await resolveProxyUrl(src.proxyId, src.userId);
+  const proxyUrl = proxyRes?.proxyUrl;
 
   const urlOrHandle = src.accountHandle || src.accountUrl;
   if (!urlOrHandle) return { ...def, pendingBefore: pendingCount, pendingAfter: pendingCount, skipped: true };
@@ -749,6 +759,10 @@ export async function refillSourceToLimit(
     } catch (tikwmErr: any) {
       console.warn(`[Refill] tikwm fallback failed for ${urlOrHandle}: ${tikwmErr.message}`);
     }
+  }
+
+  if (allVideos.length === 0 && proxyRes?.proxyDbId) {
+    await releaseGlobalProxy(proxyRes.proxyDbId).catch(() => {});
   }
 
   if (allVideos.length === 0) {

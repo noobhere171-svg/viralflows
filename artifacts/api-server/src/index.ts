@@ -49,6 +49,21 @@ import { sql } from "drizzle-orm";
   }
 })();
 
+// Migration 0006: Add country + operation flags to global_proxies
+(async () => {
+  try {
+    await db.execute(sql`
+      ALTER TABLE global_proxies ADD COLUMN IF NOT EXISTS country text;
+      ALTER TABLE global_proxies ADD COLUMN IF NOT EXISTS use_for_fetch boolean DEFAULT true;
+      ALTER TABLE global_proxies ADD COLUMN IF NOT EXISTS use_for_download boolean DEFAULT true;
+      ALTER TABLE global_proxies ADD COLUMN IF NOT EXISTS use_for_upload boolean DEFAULT false;
+    `);
+    console.log("[DB] Migration 0006: global_proxies columns added");
+  } catch (err: any) {
+    console.error(`[DB] Migration 0006 failed: ${err?.message || err}`);
+  }
+})();
+
 startDbKeepalive();
 
 import { startScheduler } from "./workers/scheduler.js";
