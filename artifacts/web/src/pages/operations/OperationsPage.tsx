@@ -166,7 +166,7 @@ export default function OperationsPage() {
           { label: "Warnings", value: warningsCount, color: "text-amber-400" },
           { label: "Errors", value: errorsCount, color: "text-red-400" },
           { label: "Uploads today", value: `${uploadsToday}/6`, color: "text-violet-400" },
-          { label: "Plan", value: "Free", color: "text-zinc-400" },
+          { label: "Plan", value: planName === "pro" ? "Pro" : "Free", color: "text-zinc-400" },
         ].map((stat) => (
           <div key={stat.label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-center">
             <div className={`text-lg font-bold ${stat.color}`}>{stat.value}</div>
