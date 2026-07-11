@@ -235,11 +235,15 @@ router.get("/proxies", async (req: AuthRequest, res) => {
 
 router.post("/proxies", async (req: AuthRequest, res) => {
   try {
-    const { ipAddress, port, protocol, username, passwordEncrypted, assignedToPlan, maxConcurrentUsers } = req.body;
+    const { ipAddress, port, protocol, username, passwordEncrypted, assignedToPlan, maxConcurrentUsers, country, useForFetch, useForDownload, useForUpload } = req.body;
     if (!ipAddress || !port) return res.status(400).json({ error: "ipAddress and port required" });
     const [created] = await db.insert(globalProxies).values({
       ipAddress, port, protocol: protocol || "http", username, passwordEncrypted,
       assignedToPlan: assignedToPlan || "all", maxConcurrentUsers: maxConcurrentUsers || 5,
+      country: country || null,
+      useForFetch: useForFetch ?? true,
+      useForDownload: useForDownload ?? true,
+      useForUpload: useForUpload ?? false,
     }).returning();
     res.status(201).json(created);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
@@ -256,6 +260,10 @@ router.post("/proxies/bulk", async (req: AuthRequest, res) => {
           ipAddress: p.ipAddress || p.ip, port: p.port, protocol: p.protocol || "http",
           username: p.username, passwordEncrypted: p.passwordEncrypted || p.password,
           assignedToPlan: assignedToPlan || "all", maxConcurrentUsers: p.maxConcurrentUsers || 5,
+          country: p.country || null,
+          useForFetch: p.useForFetch ?? true,
+          useForDownload: p.useForDownload ?? true,
+          useForUpload: p.useForUpload ?? false,
         });
         added++;
       } catch {}
