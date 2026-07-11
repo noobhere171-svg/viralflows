@@ -122,6 +122,9 @@ export async function runUploadPipeline({
 
     let clientId: string | undefined;
     let clientSecret: string | undefined;
+    let proxyUrl: string | undefined;
+    let proxyDbId: string | undefined;
+    let proxyInfo: { proxyUrl: string; proxyId: string; useForUpload?: boolean; useForDownload?: boolean } | undefined;
     try {
       let clientSecretPath: string | undefined;
       if (channel.gcpCredentialId) {
@@ -144,12 +147,11 @@ export async function runUploadPipeline({
     }
 
     // Resolve proxy for this user (used for download and/or upload)
-    let proxyUrl: string | undefined;
-    let proxyDbId: string | undefined;
-    const proxyInfo = await resolveGlobalProxyForUser(channel.userId);
-    if (proxyInfo) {
-      proxyUrl = proxyInfo.proxyUrl;
-      proxyDbId = proxyInfo.proxyId;
+    const resolvedProxy = await resolveGlobalProxyForUser(channel.userId);
+    if (resolvedProxy) {
+      proxyUrl = resolvedProxy.proxyUrl;
+      proxyDbId = resolvedProxy.proxyId;
+      proxyInfo = { proxyUrl: resolvedProxy.proxyUrl, proxyId: resolvedProxy.proxyId, useForUpload: resolvedProxy.useForUpload, useForDownload: resolvedProxy.useForDownload };
     }
 
     if (tokens.expiry_date && Date.now() > tokens.expiry_date) {
