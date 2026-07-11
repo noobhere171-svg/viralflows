@@ -73,6 +73,9 @@ export async function runUploadPipeline({
   }
 
   let localPath: string | undefined;
+  let proxyUrl: string | undefined;
+  let proxyDbId: string | undefined;
+  let proxyInfo: { proxyUrl: string; proxyId: string; useForUpload?: boolean; useForDownload?: boolean } | undefined;
 
   try {
     let item = queueItem;
@@ -122,9 +125,6 @@ export async function runUploadPipeline({
 
     let clientId: string | undefined;
     let clientSecret: string | undefined;
-    let proxyUrl: string | undefined;
-    let proxyDbId: string | undefined;
-    let proxyInfo: { proxyUrl: string; proxyId: string; useForUpload?: boolean; useForDownload?: boolean } | undefined;
     try {
       let clientSecretPath: string | undefined;
       if (channel.gcpCredentialId) {
