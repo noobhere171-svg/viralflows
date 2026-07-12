@@ -8,7 +8,7 @@ import { users } from "../../../../lib/db/src/schema/users.js";
 import { plans } from "../../../../lib/db/src/schema/plans.js";
 import { planRequests } from "../../../../lib/db/src/schema/plan-requests.js";
 import { paymentScreenshots } from "../../../../lib/db/src/schema/payment-screenshots.js";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 const uploadDir = path.join(process.cwd(), "uploads", "screenshots");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -89,6 +89,40 @@ router.post("/upload-screenshot", upload.single("screenshot"), (req: AuthRequest
   res.json({ url });
 });
 
+const autoApproveIfEnabled = async (userId: string, requestedPlan: string, paymentId?: string) => {
+  try {
+    const [row] = await db.execute(sql`SELECT value FROM admin_settings WHERE key = 'auto_approve_upgrades'`);
+    if ((row as any)?.rows?.[0]?.value !== "true") return false;
+
+    const [plan] = await db.select().from(plans).where(eq(plans.name, requestedPlan));
+    if (!plan) return false;
+
+    const features = (typeof plan.features === "string" ? JSON.parse(plan.features) : plan.features) || {};
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + (plan.billingDays || 365));
+
+    await db.update(users).set({
+      plan: requestedPlan,
+      videosLimit: features?.dailyUploads || 3,
+      planExpiresAt: expiresAt,
+    }).where(eq(users.id, userId));
+
+    if (paymentId) {
+      await db.update(paymentScreenshots).set({
+        status: "approved", adminNote: "Auto-approved",
+        updatedAt: new Date(),
+      }).where(eq(paymentScreenshots.id, paymentId));
+    }
+
+    await db.delete(planRequests).where(and(eq(planRequests.userId, userId), eq(planRequests.status, "pending")));
+
+    return true;
+  } catch (err) {
+    console.error("[AutoApprove] Error:", err);
+    return false;
+  }
+};
+
 router.post("/request-upgrade", async (req: AuthRequest, res) => {
   try {
     const { requestedPlan, paymentMethod, screenshotUrl, amount, transactionId } = req.body;
@@ -116,6 +150,11 @@ router.post("/request-upgrade", async (req: AuthRequest, res) => {
         requestedPlan,
       }).returning();
 
+      const autoApproved = await autoApproveIfEnabled(req.userId!, requestedPlan, ps.id);
+      if (autoApproved) {
+        return res.status(201).json({ success: true, autoApproved: true, plan: requestedPlan });
+      }
+
       return res.status(201).json({ success: true, payment: ps, request: pr });
     }
 
@@ -128,6 +167,11 @@ router.post("/request-upgrade", async (req: AuthRequest, res) => {
       userId: req.userId!,
       requestedPlan,
     }).returning();
+
+    const autoApproved = await autoApproveIfEnabled(req.userId!, requestedPlan);
+    if (autoApproved) {
+      return res.status(201).json({ success: true, autoApproved: true, plan: requestedPlan });
+    }
 
     res.status(201).json({ success: true, request: created });
   } catch (err: any) { res.status(500).json({ error: err.message }); }

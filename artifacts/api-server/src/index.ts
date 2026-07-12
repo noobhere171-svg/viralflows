@@ -64,6 +64,24 @@ import { sql } from "drizzle-orm";
   }
 })();
 
+// Migration 0007: Add admin_settings table for auto-approve toggle etc.
+(async () => {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS admin_settings (
+        key text PRIMARY KEY,
+        value text NOT NULL,
+        updated_at timestamp DEFAULT now()
+      );
+      INSERT INTO admin_settings (key, value) VALUES ('auto_approve_upgrades', 'false')
+        ON CONFLICT (key) DO NOTHING;
+    `);
+    console.log("[DB] Migration 0007: admin_settings table created");
+  } catch (err: any) {
+    console.error(`[DB] Migration 0007 failed: ${err?.message || err}`);
+  }
+})();
+
 startDbKeepalive();
 
 import { startScheduler } from "./workers/scheduler.js";

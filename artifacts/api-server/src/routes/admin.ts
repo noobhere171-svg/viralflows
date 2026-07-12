@@ -364,6 +364,25 @@ router.post("/payments/:id/reject", async (req: AuthRequest, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
+// ─── Admin Settings ───
+router.get("/settings", async (_req: AuthRequest, res) => {
+  try {
+    const rows = await db.execute(sql`SELECT key, value, updated_at FROM admin_settings`);
+    const obj: Record<string, string> = {};
+    for (const r of rows.rows || []) { obj[(r as any).key] = (r as any).value; }
+    res.json(obj);
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
+router.patch("/settings", async (req: AuthRequest, res) => {
+  try {
+    const { key, value } = req.body;
+    if (!key) return res.status(400).json({ error: "key required" });
+    await db.execute(sql`INSERT INTO admin_settings (key, value, updated_at) VALUES (${key}, ${value}, now()) ON CONFLICT (key) DO UPDATE SET value = ${value}, updated_at = now()`);
+    res.json({ success: true });
+  } catch (err: any) { res.status(500).json({ error: err.message }); }
+});
+
 // ─── Check Expired Plans ───
 router.post("/check-expired", async (_req: AuthRequest, res) => {
   try {

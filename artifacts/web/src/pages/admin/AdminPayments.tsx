@@ -8,13 +8,30 @@ export default function AdminPayments() {
   const [tab, setTab] = useState<"pending" | "approved" | "rejected">("pending");
   const [actionNote, setActionNote] = useState<Record<string, string>>({});
   const [viewScreenshot, setViewScreenshot] = useState<string | null>(null);
+  const [autoApprove, setAutoApprove] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  const loadSettings = () => {
+    setSettingsLoading(true);
+    api.get("/admin/settings").then((data) => {
+      setAutoApprove(data.auto_approve_upgrades === "true");
+    }).catch(() => {}).finally(() => setSettingsLoading(false));
+  };
+
+  const toggleAutoApprove = async () => {
+    const next = !autoApprove;
+    setAutoApprove(next);
+    try {
+      await api.patch("/admin/settings", { key: "auto_approve_upgrades", value: next.toString() });
+    } catch { setAutoApprove(!next); }
+  };
 
   const load = () => {
     setLoading(true);
     api.get(`/admin/payments?status=${tab}`).then(setPayments).catch(() => {}).finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, [tab]);
+  useEffect(() => { loadSettings(); load(); }, [tab]);
 
   const handleApprove = async (id: string) => {
     try {
@@ -38,7 +55,21 @@ export default function AdminPayments() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Payment Approvals</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-white">Payment Approvals</h1>
+        <button onClick={toggleAutoApprove} disabled={settingsLoading}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${autoApprove ? "bg-green-600/20 text-green-400 hover:bg-green-600/30" : "bg-[#1a1a1a] text-zinc-400 hover:text-white"}`}>
+          <span className={`inline-block w-5 h-5 rounded border ${autoApprove ? "bg-green-400 border-green-400 text-black text-center leading-5 text-xs font-bold" : "bg-transparent border-zinc-500"}`}>
+            {autoApprove ? "\u2713" : ""}
+          </span>
+          Auto-Approve {autoApprove ? "ON" : "OFF"}
+        </button>
+      </div>
+      {autoApprove && (
+        <div className="bg-green-600/10 border border-green-600/30 rounded-lg px-4 py-2 text-sm text-green-400">
+          Auto-approve is enabled — all new upgrade requests will be approved automatically
+        </div>
+      )}
 
       <div className="flex gap-2">
         {(["pending", "approved", "rejected"] as const).map((t) => (

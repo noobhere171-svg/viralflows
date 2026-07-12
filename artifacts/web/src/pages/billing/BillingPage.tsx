@@ -103,20 +103,31 @@ export default function BillingPage() {
       if (screenshotFile) {
         screenshotUrl = await uploadScreenshot();
       }
-      await api.post("/billing/request-upgrade", {
+      const res = await api.post("/billing/request-upgrade", {
         requestedPlan: selectedPlan,
         paymentMethod,
         screenshotUrl,
         amount: selectedPlanData?.price || 0,
         transactionId: transactionId || null,
       });
-      setMyRequest({ requestedPlan: selectedPlan, status: "pending" });
-      setSelectedPlan(null);
-      setPaymentMethod("");
-      setScreenshotFile(null);
-      setScreenshotPreview("");
-      setTransactionId("");
-      alert("Payment submitted! Waiting for admin approval.");
+      if (res.autoApproved) {
+        setCurrentPlan(selectedPlan);
+        setPlanExpiresAt(null);
+        setSelectedPlan(null);
+        setPaymentMethod("");
+        setScreenshotFile(null);
+        setScreenshotPreview("");
+        setTransactionId("");
+        alert(`Upgrade to ${selectedPlan} approved! You now have access to ${selectedPlan} features.`);
+      } else {
+        setMyRequest({ requestedPlan: selectedPlan, status: "pending" });
+        setSelectedPlan(null);
+        setPaymentMethod("");
+        setScreenshotFile(null);
+        setScreenshotPreview("");
+        setTransactionId("");
+        alert("Payment submitted! Waiting for admin approval.");
+      }
     } catch (err: any) {
       alert(err.message || "Failed to submit payment");
     }
