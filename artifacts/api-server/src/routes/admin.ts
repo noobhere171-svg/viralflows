@@ -126,36 +126,47 @@ router.patch("/users/:id", async (req: AuthRequest, res) => {
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
 
+const safeDelete = async (table: any, condition: any) => {
+  try {
+    await db.delete(table).where(condition);
+  } catch (err: any) {
+    if (err.message?.includes("relation") && err.message?.includes("does not exist")) {
+      console.warn(`[admin] Table missing, skipping delete: ${err.message}`);
+    } else {
+      throw err;
+    }
+  }
+};
+
 router.delete("/users/:id", async (req: AuthRequest, res) => {
   try {
     const [user] = await db.select().from(users).where(eq(users.id, req.params.id as string));
     if (!user) return res.status(404).json({ error: "User not found" });
     if (user.role === "admin") return res.status(400).json({ error: "Cannot delete admin" });
 
-    // Cascade delete all user data (ordered by FK dependencies)
     const userWorkspaces = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.userId, user.id));
     const workspaceIds = userWorkspaces.map(w => w.id);
 
-    await db.delete(analytics).where(eq(analytics.userId, user.id));
-    await db.delete(scheduledUploads).where(eq(scheduledUploads.userId, user.id));
-    await db.delete(videoQueue).where(eq(videoQueue.userId, user.id));
-    await db.delete(sources).where(eq(sources.userId, user.id));
-    await db.delete(channels).where(eq(channels.userId, user.id));
+    await safeDelete(analytics, eq(analytics.userId, user.id));
+    await safeDelete(scheduledUploads, eq(scheduledUploads.userId, user.id));
+    await safeDelete(videoQueue, eq(videoQueue.userId, user.id));
+    await safeDelete(sources, eq(sources.userId, user.id));
+    await safeDelete(channels, eq(channels.userId, user.id));
     if (workspaceIds.length > 0) {
-      await db.delete(gcpCredentials).where(inArray(gcpCredentials.workspaceId, workspaceIds));
+      await safeDelete(gcpCredentials, inArray(gcpCredentials.workspaceId, workspaceIds));
     }
-    await db.delete(workspaces).where(eq(workspaces.userId, user.id));
-    await db.delete(proxies).where(eq(proxies.userId, user.id));
-    await db.delete(operations).where(eq(operations.userId, user.id));
-    await db.delete(notifications).where(eq(notifications.userId, user.id));
-    await db.delete(notificationPreferences).where(eq(notificationPreferences.userId, user.id));
-    await db.delete(supportTickets).where(eq(supportTickets.userId, user.id));
-    await db.delete(paymentScreenshots).where(eq(paymentScreenshots.userId, user.id));
-    await db.delete(planRequests).where(eq(planRequests.userId, user.id));
-    await db.delete(referrals).where(eq(referrals.referrerUserId, user.id));
-    await db.delete(referrals).where(eq(referrals.referredUserId, user.id));
-    await db.delete(teamMembers).where(eq(teamMembers.memberUserId, user.id));
-    await db.delete(users).where(eq(users.id, user.id));
+    await safeDelete(workspaces, eq(workspaces.userId, user.id));
+    await safeDelete(proxies, eq(proxies.userId, user.id));
+    await safeDelete(operations, eq(operations.userId, user.id));
+    await safeDelete(notifications, eq(notifications.userId, user.id));
+    await safeDelete(notificationPreferences, eq(notificationPreferences.userId, user.id));
+    await safeDelete(supportTickets, eq(supportTickets.userId, user.id));
+    await safeDelete(paymentScreenshots, eq(paymentScreenshots.userId, user.id));
+    await safeDelete(planRequests, eq(planRequests.userId, user.id));
+    await safeDelete(referrals, eq(referrals.referrerUserId, user.id));
+    await safeDelete(referrals, eq(referrals.referredUserId, user.id));
+    await safeDelete(teamMembers, eq(teamMembers.memberUserId, user.id));
+    await safeDelete(users, eq(users.id, user.id));
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
