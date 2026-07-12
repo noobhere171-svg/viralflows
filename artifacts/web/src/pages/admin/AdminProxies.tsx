@@ -44,6 +44,11 @@ export default function AdminProxies() {
     fetchProxies();
   };
 
+  const handleToggleOp = async (id: string, field: string, currentValue: boolean) => {
+    await api.patch(`/admin/proxies/${id}`, { [field]: !currentValue });
+    setProxies((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: !currentValue } : p)));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -90,10 +95,9 @@ export default function AdminProxies() {
                 <td className="px-4 py-3 text-zinc-400">{p.currentUsers}/{p.maxConcurrentUsers}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2 text-xs">
-                    {p.useForFetch !== false && <span className="text-green-400" title="Fetch">F</span>}
-                    {p.useForDownload !== false && <span className="text-blue-400" title="Download">D</span>}
-                    {p.useForUpload && <span className="text-violet-400" title="Upload">U</span>}
-                    {p.useForFetch === false && p.useForDownload === false && !p.useForUpload && <span className="text-zinc-500">None</span>}
+                    <button onClick={() => handleToggleOp(p.id, "useForFetch", p.useForFetch)} className={`px-2 py-1 rounded font-bold cursor-pointer transition-colors ${p.useForFetch !== false ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-zinc-800 text-zinc-600 hover:bg-zinc-700"}`} title={p.useForFetch !== false ? "Click to disable Fetch" : "Click to enable Fetch"}>F</button>
+                    <button onClick={() => handleToggleOp(p.id, "useForDownload", p.useForDownload)} className={`px-2 py-1 rounded font-bold cursor-pointer transition-colors ${p.useForDownload !== false ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" : "bg-zinc-800 text-zinc-600 hover:bg-zinc-700"}`} title={p.useForDownload !== false ? "Click to disable Download" : "Click to enable Download"}>D</button>
+                    <button onClick={() => handleToggleOp(p.id, "useForUpload", p.useForUpload || false)} className={`px-2 py-1 rounded font-bold cursor-pointer transition-colors ${p.useForUpload ? "bg-violet-500/20 text-violet-400 hover:bg-violet-500/30" : "bg-zinc-800 text-zinc-600 hover:bg-zinc-700"}`} title={p.useForUpload ? "Click to disable Upload" : "Click to enable Upload"}>U</button>
                   </div>
                 </td>
                 <td className="px-4 py-3"><button onClick={() => handleDelete(p.id)} className="text-zinc-400 hover:text-red-400"><Trash2 size={14} /></button></td>

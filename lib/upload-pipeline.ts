@@ -215,6 +215,10 @@ export async function runUploadPipeline({
       proxyUrl: proxyInfo?.useForDownload ? proxyUrl : undefined,
     });
 
+    if (proxyInfo?.useForUpload && proxyUrl) {
+      console.log(`[Upload] Using proxy for upload: ${proxyUrl.replace(/:[^:]*@/, ':****@')}`);
+    }
+
     const { videoId: youtubeVideoId } = await withYoutubeUploadRetry({
       context: `${context} channel=${channel.channelName} item=${item.id}`,
       attempt: () =>
@@ -238,6 +242,11 @@ export async function runUploadPipeline({
     const { google } = await import("googleapis");
     const verifyClient = new google.auth.OAuth2(clientId, clientSecret);
     verifyClient.setCredentials({ access_token: tokens.access_token, refresh_token: tokens.refresh_token });
+    if (proxyInfo?.useForUpload && proxyUrl) {
+      const { HttpsProxyAgent } = await import("https-proxy-agent");
+      const { Gaxios } = await import("gaxios");
+      (verifyClient as any).transporter = new Gaxios({ agent: new HttpsProxyAgent(proxyUrl) });
+    }
     const ytVerify = google.youtube({ version: "v3", auth: verifyClient });
 
     // Initial check: does the video exist at all?
