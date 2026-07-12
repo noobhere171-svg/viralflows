@@ -143,7 +143,7 @@ export default function TopNav() {
                 recentNotifications.slice(0, 8).map((n) => (
                   <div
                     key={n.id}
-                    className={`px-4 py-3 border-b border-[#2a2a2a]/50 hover:bg-white/[0.02] transition-colors ${!n.isRead ? "bg-violet-500/5" : ""}`}
+                    className={`px-4 py-3 border-b border-[#2a2a2a]/50 hover:bg-white/[0.02] transition-colors ${!n.isRead ? "bg-indigo-500/5" : ""}`}
                     onClick={() => {
                       if (!n.isRead) markReadMutation.mutate(n.id);
                     }}
@@ -157,7 +157,7 @@ export default function TopNav() {
                         <p className="text-[10px] text-zinc-600 mt-1">{formatTimeAgo(n.createdAt)}</p>
                       </div>
                       {!n.isRead && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-violet-500 mt-1.5 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
                       )}
                     </div>
                   </div>
@@ -171,7 +171,7 @@ export default function TopNav() {
                   setOpen(false);
                   navigate("/notifications");
                 }}
-                className="w-full text-center text-xs text-violet-400 hover:text-violet-300 font-medium"
+                className="w-full text-center text-xs text-indigo-400 hover:text-indigo-300 font-medium"
               >
                 View all notifications
               </button>

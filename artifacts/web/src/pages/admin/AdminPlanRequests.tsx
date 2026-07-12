@@ -30,7 +30,7 @@ export default function AdminPlanRequests() {
       <div className="flex gap-2">
         {["pending", "approved", "rejected"].map((s) => (
           <button key={s} onClick={() => setStatus(s)}
-            className={`px-4 py-2 rounded-lg text-sm capitalize ${status === s ? "bg-violet-600 text-white" : "bg-[#1a1a1a] border border-[#2a2a2a] text-zinc-400 hover:text-white"}`}>
+            className={`px-4 py-2 rounded-lg text-sm capitalize ${status === s ? "bg-indigo-600 text-white" : "bg-[#1a1a1a] border border-[#2a2a2a] text-zinc-400 hover:text-white"}`}>
             {s}
           </button>
         ))}
@@ -51,7 +51,7 @@ export default function AdminPlanRequests() {
             : requests.map((r) => (
               <tr key={r.id} className="border-b border-[#2a2a2a]">
                 <td className="px-4 py-3 text-white">{r.userEmail || "Unknown"}</td>
-                <td className="px-4 py-3"><span className="px-2 py-1 rounded text-xs font-medium bg-violet-500/20 text-violet-400 capitalize">{r.requestedPlan}</span></td>
+                <td className="px-4 py-3"><span className="px-2 py-1 rounded text-xs font-medium bg-indigo-500/20 text-indigo-400 capitalize">{r.requestedPlan}</span></td>
                 <td className="px-4 py-3 text-zinc-400 text-xs">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "-"}</td>
                 <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs font-medium ${r.status === "approved" ? "bg-green-500/20 text-green-400" : r.status === "rejected" ? "bg-red-500/20 text-red-400" : "bg-yellow-500/20 text-yellow-400"}`}>{r.status}</span></td>
                 <td className="px-4 py-3 flex gap-2">

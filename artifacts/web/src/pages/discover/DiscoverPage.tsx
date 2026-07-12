@@ -68,7 +68,7 @@ function SeoModal({ creator, description, tags, onClose, onQueue }: {
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2"><Sparkles size={16} className="text-violet-400" /> YouTube Content Generator</h2>
+          <h2 className="text-lg font-semibold text-white flex items-center gap-2"><Sparkles size={16} className="text-indigo-400" /> YouTube Content Generator</h2>
           <button onClick={onClose} className="text-zinc-400 hover:text-white"><X size={18} /></button>
         </div>
         <p className="text-xs text-zinc-500 mb-4">ViralFlows Powered — AI-generated content for @{creator.username}</p>
@@ -77,7 +77,7 @@ function SeoModal({ creator, description, tags, onClose, onQueue }: {
           <label className="text-xs text-zinc-500 font-medium mb-1 block">📝 Generate Description</label>
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={6} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 resize-none" />
           <div className="flex gap-2 mt-2">
-            <button onClick={handleGenerateDesc} disabled={generatingDesc} className="bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 disabled:opacity-50">
+            <button onClick={handleGenerateDesc} disabled={generatingDesc} className="bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 disabled:opacity-50">
               <Sparkles size={12} /> {generatingDesc ? "Generating..." : "Generate Description"}
             </button>
             <button onClick={() => handleCopy(desc, "desc")} className="bg-[#0f0f0f] border border-[#2a2a2a] text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
@@ -90,7 +90,7 @@ function SeoModal({ creator, description, tags, onClose, onQueue }: {
           <label className="text-xs text-zinc-500 font-medium mb-1 block">🏷️ Generate 100+ Tags</label>
           <textarea value={tagText} onChange={(e) => setTagText(e.target.value)} rows={4} className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 resize-none" />
           <div className="flex gap-2 mt-2">
-            <button onClick={handleGenerateTags} disabled={generatingTags} className="bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 disabled:opacity-50">
+            <button onClick={handleGenerateTags} disabled={generatingTags} className="bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 disabled:opacity-50">
               <Sparkles size={12} /> {generatingTags ? "Generating..." : "Generate 100+ Tags"}
             </button>
             <button onClick={() => handleCopy(tagText, "tags")} className="bg-[#0f0f0f] border border-[#2a2a2a] text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
@@ -126,7 +126,7 @@ function CreatorInfoModal({ creator, onClose }: { creator: Creator; onClose: () 
             {creator.avatar && <img src={creator.avatar} alt="" className="w-8 h-8 rounded-full border border-[#2a2a2a]" />}
             <div>
               <h2 className="text-white font-medium text-sm">{creator.nickname}</h2>
-              <a href={`https://www.tiktok.com/@${creator.username}`} target="_blank" rel="noopener noreferrer" className="text-xs text-violet-400 hover:underline flex items-center gap-1">@{creator.username} <ExternalLink size={10} /></a>
+              <a href={`https://www.tiktok.com/@${creator.username}`} target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-400 hover:underline flex items-center gap-1">@{creator.username} <ExternalLink size={10} /></a>
             </div>
           </div>
           <button onClick={onClose} className="text-zinc-400 hover:text-white"><X size={18} /></button>
@@ -149,14 +149,14 @@ function CreatorInfoModal({ creator, onClose }: { creator: Creator; onClose: () 
         {creator.bio && <p className="text-xs text-zinc-400 mb-2">Bio: {creator.bio}</p>}
 
         <div className="flex items-center justify-between text-xs text-zinc-600 mb-3">
-          <span>Engagement Score: <span className="text-violet-400 font-medium">{creator.engagementScore || "—"}</span></span>
+          <span>Engagement Score: <span className="text-indigo-400 font-medium">{creator.engagementScore || "—"}</span></span>
         </div>
 
         <div className="flex gap-2">
           <button onClick={handleCopyAll} className="flex-1 bg-[#0f0f0f] border border-[#2a2a2a] text-zinc-400 hover:text-white py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1">
             {copiedAll ? <Check size={12} className="text-green-500" /> : <Copy size={12} />} Copy All Info
           </button>
-          <button onClick={() => setShowSeo(true)} className="flex-1 bg-violet-500/10 border border-violet-500/20 text-violet-400 hover:bg-violet-500/20 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1">
+          <button onClick={() => setShowSeo(true)} className="flex-1 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 py-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1">
             <Sparkles size={12} /> YouTube Content Generator
           </button>
         </div>
@@ -243,7 +243,7 @@ export default function DiscoverPage() {
           { key: "hashtag", label: "# Hashtag" },
         ].map((tab) => (
           <button key={tab.key} onClick={() => { setSearchType(tab.key as any); setQuery(""); setResults(null); }}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${searchType === tab.key ? 'bg-violet-500/10 text-violet-400' : 'text-zinc-400 hover:text-white'}`}>
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${searchType === tab.key ? 'bg-indigo-500/10 text-indigo-400' : 'text-zinc-400 hover:text-white'}`}>
             {tab.label}
           </button>
         ))}
@@ -252,16 +252,16 @@ export default function DiscoverPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         {searchType === "keyword" && (
-          <input className="w-64 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500/50 focus:outline-none"
+          <input className="w-64 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-indigo-500/50 focus:outline-none"
             placeholder="cooking, fitness, pets, insurance, education..."
             value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} />
         )}
         {searchType === "username" && (
-          <input className="w-48 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500/50 focus:outline-none"
+          <input className="w-48 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-indigo-500/50 focus:outline-none"
             placeholder="@username" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} />
         )}
         {searchType === "hashtag" && (
-          <input className="w-48 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500/50 focus:outline-none"
+          <input className="w-48 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:border-indigo-500/50 focus:outline-none"
             placeholder="#hashtag" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSearch()} />
         )}
 
@@ -283,7 +283,7 @@ export default function DiscoverPage() {
         </select>
 
         <button onClick={handleSearch} disabled={loading || !query.trim()}
-          className="bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5">
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-medium flex items-center gap-1.5">
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />} Search
         </button>
       </div>
@@ -301,7 +301,7 @@ export default function DiscoverPage() {
                 .then(d => { setResults(d); setError(null); }).catch((err: any) => setError(err?.error || err?.message || "Search failed")).finally(() => setLoading(false));
               }
             }}
-            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${followers === `${limit}+` ? 'bg-violet-600 text-white' : 'bg-[#1a1a1a] border border-[#2a2a2a] text-zinc-400 hover:border-violet-500/30'}`}>
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${followers === `${limit}+` ? 'bg-indigo-600 text-white' : 'bg-[#1a1a1a] border border-[#2a2a2a] text-zinc-400 hover:border-indigo-500/30'}`}>
             {limit}+
           </button>
         ))}
@@ -321,7 +321,7 @@ export default function DiscoverPage() {
             <span>Showing <span className="text-white font-medium">{results.creators.length}</span></span>
             <span>Trending <span className="text-amber-400 font-medium">0</span></span>
             <span>Verified <span className="text-blue-400 font-medium">0</span></span>
-            <span>Avg Engagement <span className="text-violet-400 font-medium">
+            <span>Avg Engagement <span className="text-indigo-400 font-medium">
               {results.creators.length > 0 ? (results.creators.reduce((s, c) => s + (c.engagementScore || 0), 0) / results.creators.length).toFixed(1) : "—"}
             </span></span>
           </div>
@@ -331,7 +331,7 @@ export default function DiscoverPage() {
 
           {/* Creator Grid */}
           {loading ? (
-            <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-violet-400" /></div>
+            <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-indigo-400" /></div>
           ) : paginated.length === 0 ? (
             <p className="text-center text-zinc-500 py-20 text-sm">No creators found. Try a different search.</p>
           ) : (
@@ -349,7 +349,7 @@ export default function DiscoverPage() {
                       <span className="text-xs text-zinc-500">{creator.engagementScore || "—"}</span>
                     </div>
                     <button onClick={() => setSelectedCreator(creator)}
-                      className="mt-2 text-xs bg-[#0f0f0f] border border-violet-500/20 text-violet-400 hover:bg-violet-500/10 px-3 py-1 rounded-lg w-full transition-colors flex items-center justify-center gap-1">
+                      className="mt-2 text-xs bg-[#0f0f0f] border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/10 px-3 py-1 rounded-lg w-full transition-colors flex items-center justify-center gap-1">
                       <Info size={11} /> Info
                     </button>
                     <div className="grid grid-cols-2 gap-1 mt-2 text-[10px] text-zinc-600">
@@ -369,7 +369,7 @@ export default function DiscoverPage() {
                     className="bg-[#1a1a1a] border border-[#2a2a2a] text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg text-xs disabled:opacity-50"><ChevronLeft size={14} /></button>
                   {Array.from({ length: totalPages }, (_, i) => (
                     <button key={i + 1} onClick={() => setPage(i + 1)}
-                      className={`w-8 h-8 rounded-lg text-xs font-medium ${page === i + 1 ? 'bg-violet-600 text-white' : 'bg-[#0f0f0f] text-zinc-400 border border-[#2a2a2a] hover:border-violet-500/30'}`}>
+                      className={`w-8 h-8 rounded-lg text-xs font-medium ${page === i + 1 ? 'bg-indigo-600 text-white' : 'bg-[#0f0f0f] text-zinc-400 border border-[#2a2a2a] hover:border-indigo-500/30'}`}>
                       {i + 1}
                     </button>
                   ))}

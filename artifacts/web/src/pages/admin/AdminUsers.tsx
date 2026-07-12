@@ -64,7 +64,7 @@ export default function AdminUsers() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">User Management</h1>
         <button onClick={() => setShowCreateAdmin(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
           <UserPlus size={16} /> Create Admin
         </button>
       </div>
@@ -89,7 +89,7 @@ export default function AdminUsers() {
           <option value="user">User</option>
           <option value="admin">Admin</option>
         </select>
-        <button onClick={handleSearch} className="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">Search</button>
+        <button onClick={handleSearch} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">Search</button>
       </div>
 
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden">
@@ -112,7 +112,7 @@ export default function AdminUsers() {
                 <td className="px-4 py-3 text-white">{u.email}</td>
                 <td className="px-4 py-3 text-zinc-300">{u.name || "-"}</td>
                 <td className="px-4 py-3 text-zinc-400 text-xs">{u.whatsappNumber || "-"}</td>
-                <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs font-medium ${u.plan === "pro" ? "bg-violet-500/20 text-violet-400" : u.plan === "agency" ? "bg-orange-500/20 text-orange-400" : u.plan === "starter" ? "bg-blue-500/20 text-blue-400" : "bg-zinc-500/20 text-zinc-400"}`}>{u.plan}</span></td>
+                <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs font-medium ${u.plan === "pro" ? "bg-indigo-500/20 text-indigo-400" : u.plan === "agency" ? "bg-orange-500/20 text-orange-400" : u.plan === "starter" ? "bg-blue-500/20 text-blue-400" : "bg-zinc-500/20 text-zinc-400"}`}>{u.plan}</span></td>
                 <td className="px-4 py-3"><span className={`px-2 py-1 rounded text-xs font-medium ${u.role === "admin" ? "bg-green-500/20 text-green-400" : "bg-zinc-500/20 text-zinc-400"}`}>{u.role}</span></td>
                 <td className="px-4 py-3">
                   {u.isLocked ? (
@@ -179,7 +179,7 @@ export default function AdminUsers() {
                   className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" />
               </div>
               <button onClick={() => handleUpdate(editing.id, { plan: editing.plan, role: editing.role, name: editing.name })}
-                className="w-full py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700">Save Changes</button>
+                className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save Changes</button>
             </div>
           </div>
         </div>
@@ -201,7 +201,7 @@ export default function AdminUsers() {
               <input type="password" placeholder="Admin Password (min 6 chars)" value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
                 className="w-full px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" />
               <button onClick={handleCreateAdmin}
-                className="w-full py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 flex items-center justify-center gap-2">
+                className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
                 <UserPlus size={16} /> Create Admin
               </button>
             </div>

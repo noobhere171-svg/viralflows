@@ -147,7 +147,7 @@ export default function AdminPlans() {
     setEditing({ ...editing, paymentMethods: editing.paymentMethods.filter((m: string) => m !== method) });
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-pulse text-violet-500 font-bold text-xl">Loading...</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-pulse text-indigo-500 font-bold text-xl">Loading...</div></div>;
 
   return (
     <div className="space-y-6">
@@ -161,7 +161,7 @@ export default function AdminPlans() {
           paymentMethods: ["Bank Transfer", "JazzCash", "EasyPaisa"],
           bankDetails: {},
         })}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700">
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700">
           <Plus size={16} /> Add Plan
         </button>
       </div>
@@ -261,7 +261,7 @@ export default function AdminPlans() {
                   <div className="flex gap-2">
                     {featureDefs.filter(f => editing.features[f.key] === undefined).map(f => (
                       <button key={f.key} onClick={() => addFeatureToPlan(f.key)}
-                        className="px-2 py-0.5 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-zinc-400 text-xs hover:border-violet-500 hover:text-violet-400">
+                        className="px-2 py-0.5 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-zinc-400 text-xs hover:border-indigo-500 hover:text-indigo-400">
                         + {f.label}
                       </button>
                     ))}
@@ -274,7 +274,7 @@ export default function AdminPlans() {
                     <div key={def.key} className="flex items-center gap-2 py-1 group">
                       <input value={editing.featureLabels?.[def.key] || def.label}
                         onChange={(e) => updateFeatureLabel(def.key, e.target.value)}
-                        className="w-1/3 px-2 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-violet-400 text-sm" placeholder="Label" />
+                        className="w-1/3 px-2 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-indigo-400 text-sm" placeholder="Label" />
                       {def.type === "boolean" ? (
                         <input type="checkbox" checked={!!val} onChange={(e) => updateFeature(def.key, e.target.checked)}
                           className="w-4 h-4 rounded border-[#2a2a2a]" />
@@ -304,7 +304,7 @@ export default function AdminPlans() {
                   <div key={key} className="flex items-center gap-2 py-1 group">
                     <input value={editing.featureLabels?.[key] || key}
                       onChange={(e) => updateFeatureLabel(key, e.target.value)}
-                      className="w-1/3 px-2 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-violet-400 text-sm" placeholder="Label" />
+                      className="w-1/3 px-2 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-indigo-400 text-sm" placeholder="Label" />
                     {typeof val === "boolean" ? (
                       <input type="checkbox" checked={!!val} onChange={(e) => updateFeature(key, e.target.checked)}
                         className="w-4 h-4 rounded border-[#2a2a2a]" />
@@ -336,16 +336,16 @@ export default function AdminPlans() {
                 <h4 className="text-white text-sm font-medium mb-2">Payment Methods</h4>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {(editing.paymentMethods || []).map((m: string) => (
-                    <span key={m} className="px-2 py-1 bg-violet-500/20 text-violet-400 rounded text-xs flex items-center gap-1">
+                    <span key={m} className="px-2 py-1 bg-indigo-500/20 text-indigo-400 rounded text-xs flex items-center gap-1">
                       {m}
-                      <button onClick={() => removePaymentMethod(m)} className="text-violet-300 hover:text-white ml-1">&times;</button>
+                      <button onClick={() => removePaymentMethod(m)} className="text-indigo-300 hover:text-white ml-1">&times;</button>
                     </span>
                   ))}
                 </div>
                 <div className="flex gap-2">
                   {ALL_METHODS.filter(m => !(editing.paymentMethods || []).includes(m)).map(m => (
                     <button key={m} onClick={() => addPaymentMethod(m)}
-                      className="px-3 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-zinc-400 text-xs hover:border-violet-500 hover:text-violet-400">
+                      className="px-3 py-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded text-zinc-400 text-xs hover:border-indigo-500 hover:text-indigo-400">
                       + {m}
                     </button>
                   ))}
@@ -356,7 +356,7 @@ export default function AdminPlans() {
                 <h4 className="text-white text-sm font-medium mb-2">Payment Details (per method)</h4>
                 {(editing.paymentMethods || []).map((method: string) => (
                   <div key={method} className="mb-3 bg-[#0f0f0f] rounded-lg p-3">
-                    <p className="text-violet-400 text-xs font-medium mb-2">{method}</p>
+                    <p className="text-indigo-400 text-xs font-medium mb-2">{method}</p>
                     <div className="space-y-2">
                       {(methodFields[method] || []).map((field) => (
                         <div key={field.key} className="flex gap-2">
@@ -375,7 +375,7 @@ export default function AdminPlans() {
                 <label className="text-zinc-400 text-sm">Active</label>
                 <input type="checkbox" checked={editing.isActive} onChange={(e) => setEditing({ ...editing, isActive: e.target.checked })} className="w-4 h-4" />
               </div>
-              <button onClick={handleSave} className="w-full py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 flex items-center justify-center gap-2">
+              <button onClick={handleSave} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center justify-center gap-2">
                 <Save size={16} /> Save Plan
               </button>
             </div>

@@ -21,11 +21,11 @@ export default function AdminDashboard() {
     setCheckingExpired(false);
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-pulse text-violet-500 font-bold text-xl">Loading...</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-pulse text-indigo-500 font-bold text-xl">Loading...</div></div>;
   if (!stats) return <div className="text-red-400 p-8">Failed to load stats</div>;
 
   const cards = [
-    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-violet-400" },
+    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-indigo-400" },
     { label: "Total Channels", value: stats.totalChannels, icon: Youtube, color: "text-red-400" },
     { label: "Total Sources", value: stats.totalSources, icon: Share2, color: "text-orange-400" },
     { label: "Queue Items", value: stats.totalQueue, icon: ListVideo, color: "text-blue-400" },

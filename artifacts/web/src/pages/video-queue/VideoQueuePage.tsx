@@ -88,7 +88,7 @@ function SeoModal({ video, channels, sources, onClose }: { video: VideoQueueItem
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-[#2a2a2a]">
-            <button onClick={handleGenerate} disabled={generating} className="bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50">
+            <button onClick={handleGenerate} disabled={generating} className="bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 disabled:opacity-50">
               <Sparkles size={14} /> {generating ? "Generating..." : "Generate with AI"}
             </button>
             <div className="flex items-center gap-2">
@@ -249,11 +249,11 @@ function AutoRefillModal({ sources, channels: allCh, workspaces, onClose }: { so
                   );
                 })}
                 {wsSources.length > 5 && <div className="text-[10px] text-zinc-500 mt-1">...and {wsSources.length - 5} more</div>}
-                <div className="text-[10px] text-violet-400 mt-1">Settings will apply to all {wsSources.length} source(s)</div>
+                <div className="text-[10px] text-indigo-400 mt-1">Settings will apply to all {wsSources.length} source(s)</div>
               </div>
 
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={autoRefillEnabled} onChange={(e) => setAutoRefillEnabled(e.target.checked)} className="w-4 h-4 accent-violet-500" />
+                <input type="checkbox" checked={autoRefillEnabled} onChange={(e) => setAutoRefillEnabled(e.target.checked)} className="w-4 h-4 accent-indigo-500" />
                 <span className="text-sm text-white font-medium">Auto-Refill Enabled</span>
               </label>
 
@@ -289,7 +289,7 @@ function AutoRefillModal({ sources, channels: allCh, workspaces, onClose }: { so
 
         <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-[#2a2a2a]">
           <button onClick={onClose} className="bg-[#0f0f0f] border border-[#2a2a2a] text-zinc-300 hover:text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">Close</button>
-          <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || wsSources.length === 0} className="bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
+          <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || wsSources.length === 0} className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
             {saveMutation.isPending ? "Saving..." : "Save Settings to All Sources"}
           </button>
         </div>
@@ -395,13 +395,13 @@ export default function VideoQueuePage() {
         <div className="flex items-center gap-4">
           <h1 className="text-xl font-bold text-white">Video Queue</h1>
           <div className="flex items-center gap-1 text-sm">
-            <button onClick={() => setFilterTab("queued")} className={`px-3 py-1 rounded-md ${filterTab === "queued" ? "bg-violet-500/10 text-violet-400" : "text-zinc-500 hover:text-white"}`}>
+            <button onClick={() => setFilterTab("queued")} className={`px-3 py-1 rounded-md ${filterTab === "queued" ? "bg-indigo-500/10 text-indigo-400" : "text-zinc-500 hover:text-white"}`}>
               Queued <span className="text-zinc-600">({queuedCount})</span>
             </button>
-            <button onClick={() => setFilterTab("uploaded")} className={`px-3 py-1 rounded-md ${filterTab === "uploaded" ? "bg-violet-500/10 text-violet-400" : "text-zinc-500 hover:text-white"}`}>
+            <button onClick={() => setFilterTab("uploaded")} className={`px-3 py-1 rounded-md ${filterTab === "uploaded" ? "bg-indigo-500/10 text-indigo-400" : "text-zinc-500 hover:text-white"}`}>
               Uploaded <span className="text-zinc-600">({uploadedCount})</span>
             </button>
-            <button onClick={() => setFilterTab("failed")} className={`px-3 py-1 rounded-md ${filterTab === "failed" ? "bg-violet-500/10 text-violet-400" : "text-zinc-500 hover:text-white"}`}>
+            <button onClick={() => setFilterTab("failed")} className={`px-3 py-1 rounded-md ${filterTab === "failed" ? "bg-indigo-500/10 text-indigo-400" : "text-zinc-500 hover:text-white"}`}>
               Failed <span className="text-zinc-600">({queue.filter(v => v.status === "failed").length})</span>
             </button>
             {blockedCount > 0 && (
@@ -409,7 +409,7 @@ export default function VideoQueuePage() {
                 Blocked <span className="text-red-500/50">({blockedCount})</span>
               </button>
             )}
-            <button onClick={() => setFilterTab("all")} className={`px-3 py-1 rounded-md ${filterTab === "all" ? "bg-violet-500/10 text-violet-400" : "text-zinc-500 hover:text-white"}`}>
+            <button onClick={() => setFilterTab("all")} className={`px-3 py-1 rounded-md ${filterTab === "all" ? "bg-indigo-500/10 text-indigo-400" : "text-zinc-500 hover:text-white"}`}>
               All <span className="text-zinc-600">({queue.length})</span>
             </button>
           </div>
@@ -417,7 +417,7 @@ export default function VideoQueuePage() {
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-            <input className="w-44 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-7 pr-3 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:border-violet-500/50 focus:outline-none" placeholder="Search..." value={searchQ} onChange={(e) => setSearchQ(e.target.value)} />
+            <input className="w-44 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-7 pr-3 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:border-indigo-500/50 focus:outline-none" placeholder="Search..." value={searchQ} onChange={(e) => setSearchQ(e.target.value)} />
           </div>
           <select value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)}
             className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-2 py-1.5 text-xs text-white">
@@ -429,7 +429,7 @@ export default function VideoQueuePage() {
           <button onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "/api"}/analytics/videos/csv`, "_blank")} className="bg-[#1a1a1a] border border-[#2a2a2a] text-zinc-400 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
             <Download size={12} /> CSV
           </button>
-          <button onClick={() => setShowAutoRefill(true)} className="bg-violet-600 hover:bg-violet-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
+          <button onClick={() => setShowAutoRefill(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
             <Settings size={12} /> Auto-Refill
           </button>
         </div>
@@ -490,7 +490,7 @@ export default function VideoQueuePage() {
                     <div className="flex items-center gap-1.5">
                       {isPending && (
                         <>
-                          <button onClick={() => setSeoVideo(video)} className="text-xs bg-violet-500/10 text-violet-400 px-2 py-0.5 rounded hover:bg-violet-500/20">Source</button>
+                          <button onClick={() => setSeoVideo(video)} className="text-xs bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded hover:bg-indigo-500/20">Source</button>
                           <button onClick={() => uploadMutation.mutate(video.id)} className="text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded hover:bg-green-500/20">Upload</button>
                           <button onClick={() => { if (window.confirm("Skip this video?")) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-2 py-0.5 rounded hover:bg-red-500/20">Skip</button>
                           <button onClick={() => { if (window.confirm("Delete this video?")) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>

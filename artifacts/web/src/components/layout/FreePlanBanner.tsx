@@ -32,16 +32,16 @@ export default function FreePlanBanner() {
   if (plan === null || plan === "free") {
     if (plan === null) return null;
     return (
-      <div className="bg-gradient-to-r from-violet-600/20 to-orange-500/20 border border-violet-500/30 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-indigo-500/20 to-cyan-500/20 border border-indigo-500/30 rounded-xl px-4 py-3 mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <AlertTriangle size={18} className="text-violet-400" />
+          <AlertTriangle size={18} className="text-indigo-400" />
           <div>
-            <p className="text-sm font-medium text-white">You are on the <span className="text-violet-400">Free Plan</span></p>
+            <p className="text-sm font-medium text-white">You are on the <span className="text-indigo-400">Free Plan</span></p>
             <p className="text-xs text-zinc-400">Upgrade your plan to unlock all features and grow your account</p>
           </div>
         </div>
         <button onClick={() => navigate("/billing")}
-          className="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors shrink-0">
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors shrink-0">
           Upgrade Plan
         </button>
       </div>
