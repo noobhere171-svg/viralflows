@@ -11,7 +11,18 @@ import { channels } from "../../../../lib/db/src/schema/channels.js";
 import { sources } from "../../../../lib/db/src/schema/sources.js";
 import { videoQueue } from "../../../../lib/db/src/schema/video-queue.js";
 import { paymentScreenshots } from "../../../../lib/db/src/schema/payment-screenshots.js";
-import { eq, and, or, desc, sql, count, ilike } from "drizzle-orm";
+import { operations } from "../../../../lib/db/src/schema/operations.js";
+import { notifications } from "../../../../lib/db/src/schema/notifications.js";
+import { analytics } from "../../../../lib/db/src/schema/analytics.js";
+import { scheduledUploads } from "../../../../lib/db/src/schema/scheduled-uploads.js";
+import { proxies } from "../../../../lib/db/src/schema/proxies.js";
+import { workspaces } from "../../../../lib/db/src/schema/workspaces.js";
+import { gcpCredentials } from "../../../../lib/db/src/schema/gcp-credentials.js";
+import { referrals } from "../../../../lib/db/src/schema/referrals.js";
+import { teamMembers } from "../../../../lib/db/src/schema/team-members.js";
+import { notificationPreferences } from "../../../../lib/db/src/schema/notification-preferences.js";
+import { supportTickets } from "../../../../lib/db/src/schema/support-tickets.js";
+import { eq, and, or, desc, sql, count, ilike, inArray } from "drizzle-orm";
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -121,10 +132,29 @@ router.delete("/users/:id", async (req: AuthRequest, res) => {
     if (!user) return res.status(404).json({ error: "User not found" });
     if (user.role === "admin") return res.status(400).json({ error: "Cannot delete admin" });
 
-    // Cascade delete
+    // Cascade delete all user data (ordered by FK dependencies)
+    const userWorkspaces = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.userId, user.id));
+    const workspaceIds = userWorkspaces.map(w => w.id);
+
+    await db.delete(analytics).where(eq(analytics.userId, user.id));
+    await db.delete(scheduledUploads).where(eq(scheduledUploads.userId, user.id));
     await db.delete(videoQueue).where(eq(videoQueue.userId, user.id));
     await db.delete(sources).where(eq(sources.userId, user.id));
     await db.delete(channels).where(eq(channels.userId, user.id));
+    if (workspaceIds.length > 0) {
+      await db.delete(gcpCredentials).where(inArray(gcpCredentials.workspaceId, workspaceIds));
+    }
+    await db.delete(workspaces).where(eq(workspaces.userId, user.id));
+    await db.delete(proxies).where(eq(proxies.userId, user.id));
+    await db.delete(operations).where(eq(operations.userId, user.id));
+    await db.delete(notifications).where(eq(notifications.userId, user.id));
+    await db.delete(notificationPreferences).where(eq(notificationPreferences.userId, user.id));
+    await db.delete(supportTickets).where(eq(supportTickets.userId, user.id));
+    await db.delete(paymentScreenshots).where(eq(paymentScreenshots.userId, user.id));
+    await db.delete(planRequests).where(eq(planRequests.userId, user.id));
+    await db.delete(referrals).where(eq(referrals.referrerUserId, user.id));
+    await db.delete(referrals).where(eq(referrals.referredUserId, user.id));
+    await db.delete(teamMembers).where(eq(teamMembers.memberUserId, user.id));
     await db.delete(users).where(eq(users.id, user.id));
     res.json({ success: true });
   } catch (err: any) { res.status(500).json({ error: err.message }); }

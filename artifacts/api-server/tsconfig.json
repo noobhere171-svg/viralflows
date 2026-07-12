@@ -14,7 +14,6 @@
     "declaration": false,
     "declarationMap": false,
     "sourceMap": true,
-    "ignoreDeprecations": "6.0",
     "paths": {
       "@db/*": ["../../../lib/db/src/*"],
       "drizzle-orm": ["./node_modules/drizzle-orm"],
