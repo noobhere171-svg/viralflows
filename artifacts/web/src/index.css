@@ -49,3 +49,41 @@ body {
 .card-hover:hover {
   border-color: hsl(263 70% 50% / 0.3);
 }
+
+/* ========== Landing Page Animations ========== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.delay-200 { animation-delay: 200ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-600 { animation-delay: 600ms; }
+
+/* Landing page hero gradient overlay */
+.hero-gradient {
+  background: radial-gradient(ellipse at top right, rgba(99,102,241,0.15), transparent 50%),
+              radial-gradient(ellipse at bottom left, rgba(6,182,212,0.1), transparent 50%),
+              linear-gradient(to bottom, #0f172a, #0f0f0f);
+}
+
+.features-gradient {
+  background: linear-gradient(to bottom, #0f172a, rgba(15,15,15,0.8), #0f172a);
+}
+
+.cta-gradient {
+  background: linear-gradient(135deg, rgba(255,107,53,0.15), rgba(99,102,241,0.1), rgba(255,107,53,0.15));
+}
