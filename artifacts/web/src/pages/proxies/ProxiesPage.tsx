@@ -55,7 +55,7 @@ export default function ProxiesPage() {
                   <div className="flex gap-2 text-xs">
                     {data.proxy.useForFetch !== false && <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded">Fetch</span>}
                     {data.proxy.useForDownload !== false && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">Download</span>}
-                    {data.proxy.useForUpload && <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 rounded">Upload</span>}
+                    {data.proxy.useForUpload && <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded">Upload</span>}
                   </div>
                 </td>
               </tr>

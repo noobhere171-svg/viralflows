@@ -158,7 +158,7 @@ function AutoRefillModal({
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <label className="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1 rounded text-xs cursor-pointer">
+                  <label className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-xs cursor-pointer">
                     {cookiesFile ? cookiesFile.name : "Choose cookies.txt"}
                     <input type="file" accept=".txt" className="hidden" onChange={(e) => setCookiesFile(e.target.files?.[0] || null)} />
                   </label>
@@ -169,7 +169,7 @@ function AutoRefillModal({
                   )}
                 </div>
               )}
-              {cookiesMsg && <div className="text-xs text-violet-400 mt-1">{cookiesMsg}</div>}
+              {cookiesMsg && <div className="text-xs text-indigo-400 mt-1">{cookiesMsg}</div>}
             </div>
           )}
 
@@ -190,11 +190,11 @@ function AutoRefillModal({
                   );
                 })}
                 {wsSources.length > 5 && <div className="text-[10px] text-zinc-500 mt-1">...and {wsSources.length - 5} more</div>}
-                <div className="text-[10px] text-violet-400 mt-1">Settings will apply to all {wsSources.length} source(s)</div>
+                <div className="text-[10px] text-indigo-400 mt-1">Settings will apply to all {wsSources.length} source(s)</div>
               </div>
 
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={autoRefillEnabled} onChange={(e) => setAutoRefillEnabled(e.target.checked)} className="w-4 h-4 accent-violet-500" />
+                <input type="checkbox" checked={autoRefillEnabled} onChange={(e) => setAutoRefillEnabled(e.target.checked)} className="w-4 h-4 accent-indigo-500" />
                 <span className="text-sm text-white font-medium">Auto-Refill Enabled</span>
               </label>
 
@@ -228,7 +228,7 @@ function AutoRefillModal({
 
         <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-[#2a2a2a]">
           <button onClick={onClose} className="bg-[#0f0f0f] border border-[#2a2a2a] text-zinc-300 hover:text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">Close</button>
-          <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || wsSources.length === 0} className="bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
+          <button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending || wsSources.length === 0} className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors">
             {saveMutation.isPending ? "Saving..." : "Save Auto-Refill Settings"}
           </button>
         </div>
@@ -364,7 +364,7 @@ export default function ChannelsPage() {
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
             <input
-              className="w-56 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500/50 focus:outline-none"
+              className="w-56 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder:text-zinc-500 focus:border-indigo-500/50 focus:outline-none"
               placeholder="Search channels..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -394,7 +394,7 @@ export default function ChannelsPage() {
           <button onClick={() => setShowAutoRefill(true)} className="bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ml-2 flex items-center gap-1.5">
             <Settings size={14} /> Auto-Refill
           </button>
-          <button onClick={() => setShowImport(true)} className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ml-4">
+          <button onClick={() => setShowImport(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ml-4">
             Import
           </button>
         </div>
@@ -480,11 +480,11 @@ export default function ChannelsPage() {
             </div>
             <div className="flex items-center justify-between mt-4">
               <button onClick={() => setImportRows([...importRows, { tiktokUsername: "", channelName: "", youtubeChannelId: "", gmail: "" }])}
-                className="text-xs text-violet-400 hover:text-violet-300 border border-dashed border-zinc-700 rounded-lg px-4 py-1.5">+ Add Row</button>
+                className="text-xs text-indigo-400 hover:text-indigo-300 border border-dashed border-zinc-700 rounded-lg px-4 py-1.5">+ Add Row</button>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-zinc-500">{importRows.filter(r => r.tiktokUsername && r.channelName && r.youtubeChannelId && r.gmail).length} ready</span>
                 <button onClick={() => importMutation.mutate()} disabled={importMutation.isPending}
-                  className="bg-violet-600 hover:bg-violet-700 disabled:bg-zinc-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5">
+                  className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-zinc-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5">
                   <Upload size={14} /> Import All {importRows.filter(r => r.tiktokUsername && r.channelName && r.youtubeChannelId && r.gmail).length} Channels
                 </button>
               </div>
@@ -569,7 +569,7 @@ export default function ChannelsPage() {
                         ch.authStatus !== "authorized" && (
                           <>
                             <button onClick={() => { api.get<any>(`/channels/${ch.id}/authorize`).then((r) => { if (r.redirectUrl) window.open(r.redirectUrl, '_blank', 'width=600,height=700'); else alert('No redirect URL returned'); }).catch((e) => alert(`Auth failed: ${e.message}`)); }}
-                              className="text-xs bg-violet-500/10 text-violet-400 px-2 py-0.5 rounded hover:bg-violet-500/20">Auth</button>
+                              className="text-xs bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded hover:bg-indigo-500/20">Auth</button>
                             <button onClick={() => { api.get<any>(`/channels/${ch.id}/authorize`).then((r) => { if (r.redirectUrl) { navigator.clipboard.writeText(r.redirectUrl); setCopiedId(ch.id); setTimeout(() => setCopiedId(null), 2000); } else alert('No redirect URL returned'); }).catch((e) => alert(`Copy failed: ${e.message}`)); }}
                               className="text-xs bg-zinc-500/10 text-zinc-400 px-2 py-0.5 rounded hover:bg-zinc-500/20 flex items-center gap-1">
                               {copiedId === ch.id ? <Check size={10} /> : <Copy size={10} />}

@@ -237,7 +237,7 @@ export default function WorkspacesPage() {
           <h1 className="text-xl font-bold text-white">Workspaces & GCP</h1>
           <div className="relative">
             <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-            <input className="w-48 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-7 pr-3 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:border-violet-500/50 focus:outline-none" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input className="w-48 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-7 pr-3 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:border-indigo-500/50 focus:outline-none" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export default function WorkspacesPage() {
           </button>
           <button onClick={() => setShowAutoAssign(true)}
             className="bg-[#1a1a1a] border border-[#2a2a2a] text-zinc-400 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium">GCP Auto-Assign</button>
-          <button onClick={() => setShowCreate(true)} className="bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+          <button onClick={() => setShowCreate(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
             <Plus size={14} /> Create Workspace
           </button>
         </div>
@@ -267,7 +267,7 @@ export default function WorkspacesPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Globe size={18} className="text-violet-400" />
+                <Globe size={18} className="text-indigo-400" />
                 <h2 className="text-lg font-semibold text-white">{ws.email || ws.gcpEmail || "Unnamed"}</h2>
               </div>
               <button onClick={() => setDeleteConfirm(ws.id)} className="text-zinc-500 hover:text-red-400 text-xs border border-[#2a2a2a] px-2.5 py-1 rounded-lg">Delete</button>
@@ -299,12 +299,12 @@ export default function WorkspacesPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-zinc-500">Upload JSON</span>
                     <button onClick={() => navigate("/")}
-                      className="text-[10px] text-zinc-600 hover:text-violet-400 flex items-center gap-0.5">
+                      className="text-[10px] text-zinc-600 hover:text-indigo-400 flex items-center gap-0.5">
                       <HelpCircle size={10} /> Guide
                     </button>
                   </div>
                   <button onClick={() => handleUploadGcp(ws)} disabled={uploadingId === ws.id}
-                    className="text-xs bg-violet-500/10 text-violet-400 px-2 py-0.5 rounded hover:bg-violet-500/20">
+                    className="text-xs bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded hover:bg-indigo-500/20">
                     {uploadingId === ws.id ? "Uploading..." : "Upload"}
                   </button>
                 </div>
@@ -346,11 +346,11 @@ export default function WorkspacesPage() {
               )}
               <div className="flex items-center justify-between mt-1.5">
                 <button onClick={() => handleUploadGcp(ws)} disabled={uploadingId === ws.id}
-                  className="text-xs text-violet-400 hover:text-violet-300">
+                  className="text-xs text-indigo-400 hover:text-indigo-300">
                   {uploadingId === ws.id ? "Uploading..." : creds.length === 0 ? "+ Add GCP Project" : "+ Add Another GCP"}
                 </button>
                 <button onClick={() => navigate("/")}
-                  className="text-[10px] text-zinc-600 hover:text-violet-400 flex items-center gap-0.5">
+                  className="text-[10px] text-zinc-600 hover:text-indigo-400 flex items-center gap-0.5">
                   <HelpCircle size={10} /> Guide
                 </button>
               </div>
@@ -427,7 +427,7 @@ export default function WorkspacesPage() {
                                   }
                                   if (r.redirectUrl) window.open(r.redirectUrl, '_blank', 'width=600,height=700');
                                 } catch (err: any) { fb("error", err?.message || "Auth failed"); }
-                              }} className="text-[10px] bg-violet-500/10 text-violet-400 px-1.5 py-0.5 rounded hover:bg-violet-500/20">Auth</button>
+                              }} className="text-[10px] bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded hover:bg-indigo-500/20">Auth</button>
                               <button onClick={async () => {
                                 try {
                                   const r = await api.get<any>(`/channels/${ch.id}/authorize`);
@@ -465,7 +465,7 @@ export default function WorkspacesPage() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setShowAutoAssign(false)}>
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 w-full max-w-xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2"><Settings2 size={16} className="text-violet-400" /> GCP Auto-Assign</h2>
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2"><Settings2 size={16} className="text-indigo-400" /> GCP Auto-Assign</h2>
               <button onClick={() => setShowAutoAssign(false)} className="text-zinc-400 hover:text-white"><X size={18} /></button>
             </div>
 
@@ -515,8 +515,8 @@ export default function WorkspacesPage() {
                     <div className="grid grid-cols-4 gap-2">
                       {[{ v: 1, l: "1 ch", m: "6 vid/day each" }, { v: 2, l: "2 ch", m: "3 vid/day each" }, { v: 3, l: "3 ch", m: "2 vid/day each" }, { v: 6, l: "6 ch", m: "1 vid/day each" }].map(o => (
                         <button key={o.v} onClick={() => setAssignForm(a => ({ ...a, channelsPerProject: o.v, videosPerDay: Math.min(a.videosPerDay, Math.floor(6 / o.v)) }))}
-                          className={`p-2 rounded-lg border text-center ${assignForm.channelsPerProject === o.v ? 'bg-violet-500/10 border-violet-500/30' : 'bg-[#0f0f0f] border-[#2a2a2a]'}`}>
-                          <div className={`text-xs font-medium ${assignForm.channelsPerProject === o.v ? 'text-violet-400' : 'text-zinc-400'}`}>{o.l}</div>
+                          className={`p-2 rounded-lg border text-center ${assignForm.channelsPerProject === o.v ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-[#0f0f0f] border-[#2a2a2a]'}`}>
+                          <div className={`text-xs font-medium ${assignForm.channelsPerProject === o.v ? 'text-indigo-400' : 'text-zinc-400'}`}>{o.l}</div>
                           <div className="text-[10px] text-zinc-600">{o.m}</div>
                         </button>
                       ))}
@@ -528,10 +528,10 @@ export default function WorkspacesPage() {
                   <div>
                     <label className="text-xs text-zinc-500 block mb-2">Videos per day per channel (max {maxVidPerCh})</label>
                     <input type="range" min={1} max={maxVidPerCh} value={vidPerDay}
-                      onChange={(e) => setAssignForm(a => ({ ...a, videosPerDay: Number(e.target.value) }))} className="w-full accent-violet-500" />
+                      onChange={(e) => setAssignForm(a => ({ ...a, videosPerDay: Number(e.target.value) }))} className="w-full accent-indigo-500" />
                     <div className="flex justify-between text-[10px] text-zinc-600 mt-1">
                       <span>{chPerProject} channels x {vidPerDay} vids = {chPerProject * vidPerDay}/6 daily slots used</span>
-                      <span className="text-violet-400">{vidPerDay}</span>
+                      <span className="text-indigo-400">{vidPerDay}</span>
                     </div>
                   </div>
 
@@ -559,7 +559,7 @@ export default function WorkspacesPage() {
                           setShowAutoAssign(false);
                           queryClient.invalidateQueries({ queryKey: ["channels"] });
                         } catch (err: any) { fb("error", err?.message); }
-                      }} disabled={!canAssign} className={`flex-1 py-2 rounded-lg text-sm font-medium ${canAssign ? 'bg-violet-600 hover:bg-violet-700 text-white' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}>
+                      }} disabled={!canAssign} className={`flex-1 py-2 rounded-lg text-sm font-medium ${canAssign ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'}`}>
                         Re-Assign {totalCh} channel{totalCh !== 1 ? 's' : ''}
                       </button>
                     )}
@@ -582,7 +582,7 @@ export default function WorkspacesPage() {
               <input placeholder="Workspace Name" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               <input placeholder="GCP Project ID" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white" value={form.gcpProjectId} onChange={(e) => setForm({ ...form, gcpProjectId: e.target.value })} />
               <input placeholder="GCP Service Account Email" className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white" value={form.gcpEmail} onChange={(e) => setForm({ ...form, gcpEmail: e.target.value })} />
-              <button onClick={() => createMutation.mutate()} className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded-lg text-sm font-medium">Create</button>
+              <button onClick={() => createMutation.mutate()} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-sm font-medium">Create</button>
             </div>
           </div>
         </div>

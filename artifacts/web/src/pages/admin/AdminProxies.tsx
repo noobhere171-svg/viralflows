@@ -61,7 +61,7 @@ export default function AdminProxies() {
         <h1 className="text-2xl font-bold text-white">Global Proxy Pool</h1>
         <div className="flex gap-2">
           <button onClick={() => setShowBulk(true)} className="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] border border-[#2a2a2a] text-white rounded-lg text-sm hover:bg-white/5"><Upload size={16} /> Bulk Import</button>
-          <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700"><Plus size={16} /> Add Proxy</button>
+          <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"><Plus size={16} /> Add Proxy</button>
         </div>
       </div>
 
@@ -103,7 +103,7 @@ export default function AdminProxies() {
                   <div className="flex gap-2 text-xs">
                     <button onClick={() => handleToggleOp(p.id, "useForFetch", p.useForFetch)} className={`px-2 py-1 rounded font-bold cursor-pointer transition-colors ${p.useForFetch !== false ? "bg-green-500/20 text-green-400 hover:bg-green-500/30" : "bg-zinc-800 text-zinc-600 hover:bg-zinc-700"}`} title={p.useForFetch !== false ? "Click to disable Fetch" : "Click to enable Fetch"}>F</button>
                     <button onClick={() => handleToggleOp(p.id, "useForDownload", p.useForDownload)} className={`px-2 py-1 rounded font-bold cursor-pointer transition-colors ${p.useForDownload !== false ? "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30" : "bg-zinc-800 text-zinc-600 hover:bg-zinc-700"}`} title={p.useForDownload !== false ? "Click to disable Download" : "Click to enable Download"}>D</button>
-                    <button onClick={() => handleToggleOp(p.id, "useForUpload", p.useForUpload || false)} className={`px-2 py-1 rounded font-bold cursor-pointer transition-colors ${p.useForUpload ? "bg-violet-500/20 text-violet-400 hover:bg-violet-500/30" : "bg-zinc-800 text-zinc-600 hover:bg-zinc-700"}`} title={p.useForUpload ? "Click to disable Upload" : "Click to enable Upload"}>U</button>
+                    <button onClick={() => handleToggleOp(p.id, "useForUpload", p.useForUpload || false)} className={`px-2 py-1 rounded font-bold cursor-pointer transition-colors ${p.useForUpload ? "bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30" : "bg-zinc-800 text-zinc-600 hover:bg-zinc-700"}`} title={p.useForUpload ? "Click to disable Upload" : "Click to enable Upload"}>U</button>
                   </div>
                 </td>
                 <td className="px-4 py-3"><button onClick={() => handleDelete(p.id)} className="text-zinc-400 hover:text-red-400"><Trash2 size={14} /></button></td>
@@ -175,20 +175,20 @@ export default function AdminProxies() {
                 <label className="text-zinc-400 text-sm block mb-1">Use for</label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 text-sm text-zinc-300">
-                    <input type="checkbox" checked={form.useForFetch} onChange={(e) => setForm({ ...form, useForFetch: e.target.checked })} className="accent-violet-600" />
+                    <input type="checkbox" checked={form.useForFetch} onChange={(e) => setForm({ ...form, useForFetch: e.target.checked })} className="accent-indigo-600" />
                     Fetch
                   </label>
                   <label className="flex items-center gap-2 text-sm text-zinc-300">
-                    <input type="checkbox" checked={form.useForDownload} onChange={(e) => setForm({ ...form, useForDownload: e.target.checked })} className="accent-violet-600" />
+                    <input type="checkbox" checked={form.useForDownload} onChange={(e) => setForm({ ...form, useForDownload: e.target.checked })} className="accent-indigo-600" />
                     Download
                   </label>
                   <label className="flex items-center gap-2 text-sm text-zinc-300">
-                    <input type="checkbox" checked={form.useForUpload} onChange={(e) => setForm({ ...form, useForUpload: e.target.checked })} className="accent-violet-600" />
+                    <input type="checkbox" checked={form.useForUpload} onChange={(e) => setForm({ ...form, useForUpload: e.target.checked })} className="accent-indigo-600" />
                     Upload
                   </label>
                 </div>
               </div>
-              <button onClick={handleAdd} className="w-full py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700">Add Proxy</button>
+              <button onClick={handleAdd} className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Add Proxy</button>
             </div>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function AdminProxies() {
             </div>
             <textarea value={bulkText} onChange={(e) => setBulkText(e.target.value)} rows={10} placeholder={"192.168.1.1:8080:user:pass\n10.0.0.1:3128:\n172.16.0.1:1080:admin:secret"}
               className="w-full px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm font-mono" />
-            <button onClick={handleBulk} className="w-full mt-3 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700">Import</button>
+            <button onClick={handleBulk} className="w-full mt-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Import</button>
           </div>
         </div>
       )}

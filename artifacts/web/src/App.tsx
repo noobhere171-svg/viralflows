@@ -27,6 +27,8 @@ import NotificationsPage from "./pages/notifications/NotificationsPage";
 import SupportPage from "./pages/support/SupportPage";
 import SettingsPage from "./pages/settings/SettingsPage";
 import PricingPage from "./pages/pricing/PricingPage";
+import PrivacyPage from "./pages/legal/PrivacyPage";
+import TermsPage from "./pages/legal/TermsPage";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -66,6 +68,8 @@ export default function App() {
       <Route path="/reset-password" element={<ForgotPasswordPage />} />
       <Route path="/select-plan" element={<ProtectedRoute><SelectPlanPage /></ProtectedRoute>} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
 
       {/* Protected */}
       <Route path="/dashboard" element={<ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>} />

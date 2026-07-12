@@ -75,7 +75,7 @@ export default function AdminPayments() {
       <div className="flex gap-2">
         {(["pending", "approved", "rejected"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${tab === t ? "bg-violet-600 text-white" : "bg-[#1a1a1a] text-zinc-400 hover:text-white"}`}>
+            className={`px-4 py-2 rounded-lg text-sm font-medium capitalize ${tab === t ? "bg-indigo-600 text-white" : "bg-[#1a1a1a] text-zinc-400 hover:text-white"}`}>
             {t} {t === "pending" && <span className="ml-1 text-xs">({payments.length})</span>}
           </button>
         ))}
@@ -93,7 +93,7 @@ export default function AdminPayments() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-white font-medium">{p.userName || p.userEmail}</span>
-                    <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 rounded text-xs capitalize">{p.requestedPlan}</span>
+                    <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-xs capitalize">{p.requestedPlan}</span>
                     <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded text-xs">{p.paymentMethod}</span>
                     <span className="text-zinc-500 text-xs">{new Date(p.createdAt).toLocaleString()}</span>
                   </div>
@@ -103,7 +103,7 @@ export default function AdminPayments() {
                   </div>
                   {p.screenshotUrl && (
                     <button onClick={() => setViewScreenshot(getScreenshotUrl(p.screenshotUrl))}
-                      className="inline-flex items-center gap-1 text-violet-400 text-sm mt-2 hover:text-violet-300">
+                      className="inline-flex items-center gap-1 text-indigo-400 text-sm mt-2 hover:text-indigo-300">
                       <Image size={14} /> View Screenshot
                     </button>
                   )}

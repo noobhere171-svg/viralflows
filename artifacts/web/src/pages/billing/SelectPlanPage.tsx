@@ -14,7 +14,7 @@ const defaultIcons: Record<string, any> = {
 const defaultColors: Record<string, { border: string; bg: string; text: string }> = {
   free: { border: "border-zinc-600", bg: "bg-zinc-500/10", text: "text-zinc-400" },
   starter: { border: "border-blue-500", bg: "bg-blue-500/10", text: "text-blue-400" },
-  pro: { border: "border-violet-500", bg: "bg-violet-500/10", text: "text-violet-400" },
+  pro: { border: "border-indigo-500", bg: "bg-indigo-500/10", text: "text-indigo-400" },
   agency: { border: "border-orange-500", bg: "bg-orange-500/10", text: "text-orange-400" },
 };
 
@@ -80,7 +80,7 @@ export default function SelectPlanPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-violet-500" />
+        <Loader2 size={32} className="animate-spin text-indigo-500" />
       </div>
     );
   }
@@ -94,7 +94,7 @@ export default function SelectPlanPage() {
       <div className="w-full max-w-5xl">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-orange-500 flex items-center justify-center font-bold text-white">VF</div>
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white">VF</div>
             <span className="text-xl font-semibold text-white">ViralFlows</span>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Choose Your Plan</h1>
@@ -117,9 +117,9 @@ export default function SelectPlanPage() {
             const isFree = plan.price === 0;
 
             return (
-              <div key={plan.id} className={`relative rounded-xl border-2 p-6 flex flex-col transition-all hover:scale-[1.02] ${isRecommended && !isFree ? `${style.border} bg-violet-500/5` : "border-[#2a2a2a] bg-[#1a1a1a]"}`}>
+              <div key={plan.id} className={`relative rounded-xl border-2 p-6 flex flex-col transition-all hover:scale-[1.02] ${isRecommended && !isFree ? `${style.border} bg-indigo-500/5` : "border-[#2a2a2a] bg-[#1a1a1a]"}`}>
                 {isRecommended && !isFree && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-violet-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">
                     RECOMMENDED
                   </div>
                 )}
@@ -164,7 +164,7 @@ export default function SelectPlanPage() {
                   className={`w-full py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                     isFree
                       ? "bg-zinc-700 hover:bg-zinc-600 text-white"
-                      : "bg-violet-600 hover:bg-violet-700 text-white"
+                      : "bg-indigo-600 hover:bg-indigo-700 text-white"
                   } disabled:opacity-50`}
                 >
                   {selecting === plan.name ? (

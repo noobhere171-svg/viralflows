@@ -22,7 +22,7 @@ export default function ForgotPasswordPage() {
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
         <div className="w-full max-w-md p-6">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-orange-500 flex items-center justify-center font-bold text-white">VF</div>
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white">VF</div>
             <span className="text-xl font-semibold text-white">ViralFlows</span>
           </div>
 
@@ -67,10 +67,10 @@ export default function ForgotPasswordPage() {
                 }
               }} className="space-y-3">
                 <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors" required />
+                  className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors" required />
 
                 <button type="submit" disabled={loading}
-                  className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-violet-800 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
                   {loading ? <><Loader2 size={16} className="animate-spin" /> Sending...</> : "Send Reset Link"}
                 </button>
               </form>
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
       <div className="w-full max-w-md p-6">
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-orange-500 flex items-center justify-center font-bold text-white">VF</div>
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white">VF</div>
           <span className="text-xl font-semibold text-white">ViralFlows</span>
         </div>
 
@@ -127,19 +127,19 @@ export default function ForgotPasswordPage() {
               }
             }} className="space-y-3">
               <input type="password" placeholder="New Password" value={password} onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors" required />
+                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors" required />
 
               <input type="password" placeholder="Confirm New Password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors" required />
+                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors" required />
 
               <button type="submit" disabled={loading}
-                className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-violet-800 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
                 {loading ? <><Loader2 size={16} className="animate-spin" /> Resetting...</> : "Reset Password"}
               </button>
             </form>
           ) : (
             <button onClick={() => navigate("/login")}
-              className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2.5 rounded-lg text-sm font-medium transition-colors">
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg text-sm font-medium transition-colors">
               Go to Login
             </button>
           )}

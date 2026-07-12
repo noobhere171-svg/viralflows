@@ -3,23 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 6%;
+  --background: 222 47% 11%;
   --foreground: 0 0% 100%;
-  --card: 0 0% 10%;
-  --card-foreground: 0 0% 100%;
-  --primary: 263 70% 50%;
+  --card: 222 58% 13%;
+  --card-foreground: 214 32% 91%;
+  --primary: 239 84% 67%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 0 0% 13%;
-  --secondary-foreground: 0 0% 63%;
-  --muted: 0 0% 13%;
-  --muted-foreground: 0 0% 63%;
-  --accent: 263 70% 50%;
+  --secondary: 215 28% 17%;
+  --secondary-foreground: 215 20% 65%;
+  --muted: 215 28% 17%;
+  --muted-foreground: 213 27% 58%;
+  --accent: 187 85% 53%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 16%;
-  --input: 0 0% 16%;
-  --ring: 263 70% 50%;
+  --border: 215 25% 27%;
+  --input: 215 25% 27%;
+  --ring: 239 84% 67%;
   --radius: 0.75rem;
 }
 
@@ -41,13 +41,13 @@ body {
 
 /* Sidebar */
 .sidebar-active {
-  background: hsl(263 70% 50% / 0.1);
-  color: hsl(263 70% 50%);
+  background: hsl(239 84% 67% / 0.1);
+  color: hsl(239 84% 67%);
 }
 
 /* Card hover */
 .card-hover:hover {
-  border-color: hsl(263 70% 50% / 0.3);
+  border-color: hsl(239 84% 67% / 0.3);
 }
 
 /* ========== Landing Page Animations ========== */

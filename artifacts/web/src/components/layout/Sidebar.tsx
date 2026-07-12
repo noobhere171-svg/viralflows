@@ -57,14 +57,14 @@ export default function Sidebar() {
   }, []);
 
   const sidebarItem = "flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer";
-  const sidebarItemActive = "flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-violet-500 bg-violet-500/10 font-medium";
+  const sidebarItemActive = "flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-indigo-500 bg-indigo-500/10 font-medium";
 
   if (!sidebarOpen) return null;
 
   return (
-    <div className="fixed left-0 top-0 z-40 h-screen w-[240px] bg-[#111111] border-r border-[#2a2a2a] flex flex-col">
-      <div className="flex items-center gap-3 px-4 h-[60px] border-b border-[#2a2a2a]">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-orange-500 flex items-center justify-center font-bold text-white text-sm">VF</div>
+    <div className="fixed left-0 top-0 z-40 h-screen w-[240px] bg-[#0f1b33] border-r border-[#334155] flex flex-col">
+      <div className="flex items-center gap-3 px-4 h-[60px] border-b border-[#334155]">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white text-sm">VF</div>
         <span className="font-semibold text-white text-sm">ViralFlows</span>
       </div>
 
@@ -95,7 +95,7 @@ export default function Sidebar() {
 
       <div className="border-t border-[#2a2a2a] p-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-violet-600/20 flex items-center justify-center text-violet-400 text-xs font-bold">
+          <div className="w-8 h-8 rounded-full bg-indigo-600/20 flex items-center justify-center text-indigo-400 text-xs font-bold">
             {userName?.[0]?.toUpperCase() || "U"}
           </div>
           <div className="flex-1 min-w-0">

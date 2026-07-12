@@ -9,7 +9,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex">
+    <div className="min-h-screen bg-[#0f172a] flex">
       <Sidebar />
       <div className={`flex-1 flex flex-col transition-all duration-200 ${sidebarOpen ? "ml-[240px]" : "ml-0"}`}>
         <TopNav />

@@ -85,7 +85,7 @@ export default function TopNav() {
   const unread = countData?.unread ?? 0;
 
   return (
-    <div className="h-[60px] border-b border-[#2a2a2a] flex items-center justify-between px-6 bg-[#0f0f0f]">
+    <div className="h-[60px] border-b border-[#334155] flex items-center justify-between px-6 bg-[#0f172a]">
       <div className="flex items-center gap-4">
         <button onClick={toggleSidebar} className="text-zinc-400 hover:text-white transition-colors">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -99,7 +99,7 @@ export default function TopNav() {
           <input
             type="text"
             placeholder="Search..."
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-violet-500/50 w-64"
+            className="bg-[#0f1b33] border border-[#334155] rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500/50 w-64"
           />
         </div>
       </div>
@@ -111,7 +111,7 @@ export default function TopNav() {
         >
           <Bell size={20} />
           {unread > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-violet-500 text-[10px] text-white font-bold px-1">
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-indigo-500 text-[10px] text-white font-bold px-1">
               {unread > 99 ? "99+" : unread}
             </span>
           )}
@@ -125,7 +125,7 @@ export default function TopNav() {
                 {unread > 0 && (
                   <button
                     onClick={() => markAllReadMutation.mutate()}
-                    className="text-[10px] text-violet-400 hover:text-violet-300"
+                    className="text-[10px] text-indigo-400 hover:text-indigo-300"
                   >
                     Mark all read
                   </button>

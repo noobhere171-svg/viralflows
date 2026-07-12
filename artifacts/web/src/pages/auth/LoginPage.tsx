@@ -48,7 +48,7 @@ export default function LoginPage() {
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-violet-500" />
+        <Loader2 size={32} className="animate-spin text-indigo-500" />
       </div>
     );
   }
@@ -57,7 +57,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
       <div className="w-full max-w-md p-6">
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-orange-500 flex items-center justify-center font-bold text-white">VF</div>
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white">VF</div>
           <span className="text-xl font-semibold text-white">ViralFlows</span>
         </div>
 
@@ -73,23 +73,23 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors" required />
+              className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors" required />
 
             <div className="relative">
               <input type={showPassword ? "text" : "password"} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors pr-10" required />
+                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors pr-10" required />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
 
             <button type="submit" disabled={loading}
-              className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-violet-800 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
               {loading ? <><Loader2 size={16} className="animate-spin" /> Signing in...</> : "Sign In"}
             </button>
 
             <div className="text-center mt-2">
-              <button type="button" onClick={() => navigate("/forgot-password")} className="text-sm text-zinc-500 hover:text-violet-400 transition-colors">
+              <button type="button" onClick={() => navigate("/forgot-password")} className="text-sm text-zinc-500 hover:text-indigo-400 transition-colors">
                 Forgot Password?
               </button>
             </div>
@@ -97,7 +97,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-zinc-500 mt-4">
             Don't have an account?{" "}
-            <button onClick={() => navigate("/register")} className="text-violet-400 hover:text-violet-300 font-medium">Create Account</button>
+            <button onClick={() => navigate("/register")} className="text-indigo-400 hover:text-indigo-300 font-medium">Create Account</button>
           </p>
         </div>
       </div>

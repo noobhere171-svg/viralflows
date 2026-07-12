@@ -121,14 +121,14 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, delay: 0.45, ease: "easeOut" }}
                 className="mt-10 flex items-center gap-4"
               >
-                <div className="flex -space-x-3">
+                <button onClick={() => navigate("/register")} className="flex -space-x-3 cursor-pointer">
                   {avatarGradients.map((g, i) => (
                     <div key={i} className={`w-10 h-10 rounded-full bg-gradient-to-br ${g} border-2 border-[#0f172a] flex items-center justify-center text-xs font-bold text-white`}>
                       {["A", "M", "K"][i]}
                     </div>
                   ))}
-                </div>
-                <span className="text-[#cbd5e1] text-sm">Join <span className="text-white font-semibold">10K+ creators</span> growing on autopilot</span>
+                </button>
+                <button onClick={() => navigate("/register")} className="text-[#cbd5e1] text-sm hover:text-white transition-colors cursor-pointer">Join <span className="text-white font-semibold">10K+ creators</span> growing on autopilot</button>
               </motion.div>
             </div>
 
@@ -347,9 +347,9 @@ export default function LandingPage() {
           </div>
           <p className="text-sm text-[#64748b]">&copy; 2026 ViralFlows. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            {["Privacy", "Terms", "Contact"].map((link) => (
-              <button key={link} className="text-sm text-[#94a3b8] hover:text-white transition-colors">{link}</button>
-            ))}
+            <button onClick={() => navigate("/privacy")} className="text-sm text-[#94a3b8] hover:text-white transition-colors">Privacy</button>
+            <button onClick={() => navigate("/terms")} className="text-sm text-[#94a3b8] hover:text-white transition-colors">Terms</button>
+            <button className="text-sm text-[#94a3b8] hover:text-white transition-colors">Contact</button>
           </div>
         </div>
       </footer>

@@ -88,7 +88,7 @@ export default function AccountSetupPage() {
   if (checkingSetup) {
     return (
       <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
-        <Loader2 className="animate-spin text-violet-500" size={32} />
+        <Loader2 className="animate-spin text-indigo-500" size={32} />
       </div>
     );
   }
@@ -97,7 +97,7 @@ export default function AccountSetupPage() {
     <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center">
       <div className="w-full max-w-md p-6">
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-orange-500 flex items-center justify-center font-bold text-white">VF</div>
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center font-bold text-white">VF</div>
           <span className="text-xl font-semibold text-white">ViralFlows</span>
         </div>
 
@@ -117,7 +117,7 @@ export default function AccountSetupPage() {
               placeholder="Full Name *"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
               required
             />
 
@@ -133,7 +133,7 @@ export default function AccountSetupPage() {
             <select
               value={selectedCountry.code}
               onChange={(e) => setSelectedCountry(countries.find((c) => c.code === e.target.value) || countries[0])}
-              className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
+              className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
             >
               {countries.map((c) => (
                 <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.dialCode})</option>
@@ -149,7 +149,7 @@ export default function AccountSetupPage() {
                 placeholder="WhatsApp Number *"
                 value={whatsappNumber}
                 onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, ""))}
-                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
                 required
               />
             </div>
@@ -157,7 +157,7 @@ export default function AccountSetupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-violet-600 hover:bg-violet-700 disabled:bg-violet-800 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
             >
               {loading ? <><Loader2 size={16} className="animate-spin" /> Saving...</> : "Complete Setup"}
             </button>

@@ -151,7 +151,7 @@ export default function OperationsPage() {
 
   const opStats = [
     { icon: CheckCircle, label: "Completed", value: operations.filter(o => o.status === "completed").length, color: "text-green-400" },
-    { icon: Loader2, label: "In Progress", value: operations.filter(o => o.status === "running" || o.status === "processing" || o.status === "in_progress").length, color: "text-violet-400" },
+    { icon: Loader2, label: "In Progress", value: operations.filter(o => o.status === "running" || o.status === "processing" || o.status === "in_progress").length, color: "text-indigo-400" },
     { icon: Clock, label: "Pending", value: operations.filter(o => o.status === "pending" || o.status === "queued").length, color: "text-amber-400" },
     { icon: AlertCircle, label: "Failed", value: operations.filter(o => o.status === "failed").length, color: "text-red-400" },
   ];
@@ -165,7 +165,7 @@ export default function OperationsPage() {
           { label: "Active", value: activeChannels, color: "text-green-400" },
           { label: "Warnings", value: warningsCount, color: "text-amber-400" },
           { label: "Errors", value: errorsCount, color: "text-red-400" },
-          { label: "Uploads today", value: `${uploadsToday}/6`, color: "text-violet-400" },
+          { label: "Uploads today", value: `${uploadsToday}/6`, color: "text-indigo-400" },
           { label: "Plan", value: planName === "pro" ? "Pro" : "Free", color: "text-zinc-400" },
         ].map((stat) => (
           <div key={stat.label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-3 text-center">
@@ -251,14 +251,14 @@ export default function OperationsPage() {
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 mb-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-            <Activity size={14} className="text-violet-400" /> Channel health
+            <Activity size={14} className="text-indigo-400" /> Channel health
           </h3>
           <button onClick={() => queryClient.invalidateQueries({ queryKey: ["channels"] })} className="text-xs text-zinc-500 hover:text-white flex items-center gap-1">
             <RefreshCw size={12} /> Refresh
           </button>
         </div>
         <div className="flex items-center gap-3 mb-3">
-          <input className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:border-violet-500/50 focus:outline-none" placeholder="Search channels..." value={channelSearch} onChange={(e) => setChannelSearch(e.target.value)} />
+          <input className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-500 focus:border-indigo-500/50 focus:outline-none" placeholder="Search channels..." value={channelSearch} onChange={(e) => setChannelSearch(e.target.value)} />
           <span className="text-xs text-zinc-500 whitespace-nowrap">{channels.length} channels</span>
         </div>
         <div className="space-y-4">
@@ -318,7 +318,7 @@ export default function OperationsPage() {
                   </div>
                   {limitNum !== -1 && limitNum > 0 && (
                     <div className="w-full bg-[#0f0f0f] rounded-full h-1">
-                      <div className={`h-1 rounded-full ${exceeded ? "bg-red-500" : pct > 80 ? "bg-amber-500" : "bg-violet-500"}`} style={{ width: `${pct}%` }} />
+                      <div className={`h-1 rounded-full ${exceeded ? "bg-red-500" : pct > 80 ? "bg-amber-500" : "bg-indigo-500"}`} style={{ width: `${pct}%` }} />
                     </div>
                   )}
                 </div>
@@ -355,7 +355,7 @@ export default function OperationsPage() {
               { label: "Edit schedules →", href: "/schedule" },
               { label: "Workspaces & GCP →", href: "/workspaces" },
             ].map((action) => (
-              <a key={action.label} href={action.href} className="block text-xs text-zinc-400 hover:text-violet-400 py-1.5 transition-colors">{action.label}</a>
+              <a key={action.label} href={action.href} className="block text-xs text-zinc-400 hover:text-indigo-400 py-1.5 transition-colors">{action.label}</a>
             ))}
           </div>
         </div>
@@ -393,7 +393,7 @@ export default function OperationsPage() {
                 <td className="px-4 py-3"><span className={`text-xs font-medium px-2 py-0.5 rounded border ${getStatusColor(op.status)}`}>{op.status}</span></td>
                 <td className="px-4 py-3">
                   <div className="w-24 bg-[#0f0f0f] rounded-full h-1.5">
-                    <div className="bg-violet-500 h-1.5 rounded-full" style={{ width: `${op.progress ?? 0}%` }} />
+                    <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${op.progress ?? 0}%` }} />
                   </div>
                 </td>
                 <td className="px-4 py-3 text-sm text-zinc-500">{op.startedAt ? formatRelativeTime(op.startedAt) : "-"}</td>

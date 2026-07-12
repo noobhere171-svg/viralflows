@@ -134,7 +134,7 @@ export default function BillingPage() {
     setSubmitting(false);
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-pulse text-violet-500 font-bold text-xl">Loading...</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-pulse text-indigo-500 font-bold text-xl">Loading...</div></div>;
 
   const currentIdx = plans.findIndex(p => p.name === currentPlan);
   const selectedPlanData = plans.find(p => p.name === selectedPlan);
@@ -151,7 +151,7 @@ export default function BillingPage() {
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5">
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-zinc-400">Current Plan:</span>
-          <span className="px-3 py-1 bg-violet-500/20 text-violet-400 rounded-lg font-semibold capitalize">{currentPlan}</span>
+          <span className="px-3 py-1 bg-indigo-500/20 text-indigo-400 rounded-lg font-semibold capitalize">{currentPlan}</span>
           {planExpiresAt && (
             <span className="text-zinc-500 text-sm">Expires: {new Date(planExpiresAt).toLocaleDateString()}</span>
           )}
@@ -172,7 +172,7 @@ export default function BillingPage() {
           const isPending = myRequest?.requestedPlan === plan.name && myRequest?.status === "pending";
 
           return (
-            <div key={plan.id} className={`bg-[#1a1a1a] border rounded-xl p-5 flex flex-col ${isCurrent ? "border-violet-500" : "border-[#2a2a2a]"}`}>
+            <div key={plan.id} className={`bg-[#1a1a1a] border rounded-xl p-5 flex flex-col ${isCurrent ? "border-indigo-500" : "border-[#2a2a2a]"}`}>
               <h3 className="text-white font-semibold text-lg mb-1">{plan.displayName}</h3>
               <div className="text-3xl font-bold text-white mb-4">
                 {plan.price === 0 ? "Free" : `${plan.price?.toLocaleString()}`}
@@ -188,12 +188,12 @@ export default function BillingPage() {
               </div>
               <div className="mt-4">
                 {isCurrent ? (
-                  <div className="w-full py-2 bg-violet-500/20 text-violet-400 rounded-lg text-sm text-center font-medium">Current Plan</div>
+                  <div className="w-full py-2 bg-indigo-500/20 text-indigo-400 rounded-lg text-sm text-center font-medium">Current Plan</div>
                 ) : isPending ? (
                   <div className="w-full py-2 bg-yellow-500/20 text-yellow-400 rounded-lg text-sm text-center font-medium">Request Pending</div>
                 ) : isUpgrade ? (
                   <button onClick={() => { setSelectedPlan(plan.name); setPaymentMethod(""); }}
-                    className="w-full py-2 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700 flex items-center justify-center gap-2">
+                    className="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center justify-center gap-2">
                     <ArrowUpRight size={14} /> Upgrade
                   </button>
                 ) : (
@@ -217,7 +217,7 @@ export default function BillingPage() {
                 <div className="grid grid-cols-2 gap-2">
                   {pMethods.map((m: string) => (
                     <button key={m} onClick={() => setPaymentMethod(m)}
-                      className={`p-3 rounded-lg border text-sm text-center transition-colors ${paymentMethod === m ? "border-violet-500 bg-violet-500/10 text-violet-400" : "border-[#2a2a2a] text-zinc-400 hover:border-zinc-600"}`}>
+                      className={`p-3 rounded-lg border text-sm text-center transition-colors ${paymentMethod === m ? "border-indigo-500 bg-indigo-500/10 text-indigo-400" : "border-[#2a2a2a] text-zinc-400 hover:border-zinc-600"}`}>
                       {m}
                     </button>
                   ))}
@@ -226,7 +226,7 @@ export default function BillingPage() {
 
               {paymentMethod && (
                 <div className="bg-[#0f0f0f] rounded-lg p-4 text-sm space-y-2">
-                  <p className="text-violet-400 font-medium mb-2">{paymentMethod} — Send payment to:</p>
+                  <p className="text-indigo-400 font-medium mb-2">{paymentMethod} — Send payment to:</p>
                   {methodFields[paymentMethod]?.map((field) => (
                     <div key={field.key} className="flex justify-between">
                       <span className="text-zinc-500">{field.label}:</span>
@@ -244,11 +244,11 @@ export default function BillingPage() {
                 <label className="text-sm text-zinc-400 mb-1 block">Payment Screenshot / Receipt (Image or PDF)</label>
                 <input type="file" accept="image/*,.pdf" onChange={handleScreenshotChange} ref={fileInputRef} className="hidden" />
                 <button onClick={() => fileInputRef.current?.click()}
-                  className="w-full border-2 border-dashed border-[#2a2a2a] rounded-lg p-4 text-center hover:border-violet-500/50 transition-colors">
+                  className="w-full border-2 border-dashed border-[#2a2a2a] rounded-lg p-4 text-center hover:border-indigo-500/50 transition-colors">
                   {screenshotPreview ? (
                     <div className="flex items-center justify-center gap-2">
                       {screenshotPreview === "pdf" ? (
-                        <><FileImage size={20} className="text-violet-400" /><span className="text-white text-sm">{screenshotFile?.name}</span></>
+                        <><FileImage size={20} className="text-indigo-400" /><span className="text-white text-sm">{screenshotFile?.name}</span></>
                       ) : (
                         <img src={screenshotPreview} alt="Screenshot" className="max-h-32 rounded" />
                       )}
@@ -272,7 +272,7 @@ export default function BillingPage() {
             <div className="flex gap-3 mt-5">
               <button onClick={() => setSelectedPlan(null)} className="flex-1 py-2.5 bg-[#0f0f0f] text-zinc-400 rounded-lg text-sm hover:bg-[#1f1f1f]">Cancel</button>
               <button onClick={handleSubmitPayment} disabled={!paymentMethod || submitting}
-                className="flex-1 py-2.5 bg-violet-600 text-white rounded-lg text-sm hover:bg-violet-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2">
                 {submitting ? "Submitting..." : <><Upload size={14} /> Submit Payment</>}
               </button>
             </div>
