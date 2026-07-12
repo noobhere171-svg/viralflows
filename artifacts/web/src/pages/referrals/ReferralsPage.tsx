@@ -46,7 +46,7 @@ export default function ReferralsPage() {
         ].map((s) => (
           <div key={s.label} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
-              <s.icon size={16} className="text-violet-400" />
+              <s.icon size={16} className="text-indigo-400" />
               <span className="text-sm text-zinc-400">{s.label}</span>
             </div>
             <div className="text-lg font-bold text-white">{s.value}</div>
@@ -59,7 +59,7 @@ export default function ReferralsPage() {
         <p className="text-sm text-zinc-500 mb-4">Earn 10% of your referral's subscription for 12 months</p>
         <div className="flex items-center gap-2">
           <input className="flex-1 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white font-mono" value={referralLink} readOnly />
-          <button onClick={copyLink} className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+          <button onClick={copyLink} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {copied ? "Copied!" : "Copy"}
           </button>

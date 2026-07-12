@@ -80,7 +80,7 @@ export default function SourcesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white">Sources</h1>
-        <button onClick={() => setShowAdd(true)} className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+        <button onClick={() => setShowAdd(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
           <Plus size={16} /> Add Source
         </button>
       </div>
@@ -105,7 +105,7 @@ export default function SourcesPage() {
                   <option key={ch.id} value={ch.id}>{ch.channelName || ch.youtubeChannelId || ch.id.slice(0, 8)}</option>
                 ))}
               </select>
-              <button onClick={() => addMutation.mutate()} className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded-lg text-sm font-medium">Add Source</button>
+              <button onClick={() => addMutation.mutate()} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-sm font-medium">Add Source</button>
             </div>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function SourcesPage() {
               <input className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500" value={editHandle} onChange={(e) => setEditHandle(e.target.value)} placeholder="@new_username" />
               <div className="flex gap-2">
                 <button onClick={() => editMutation.mutate({ id: editId, handle: editHandle })} disabled={!editHandle.trim()}
-                  className="flex-1 bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-medium">Save</button>
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-medium">Save</button>
                 <button onClick={() => setEditId(null)} className="flex-1 bg-[#0f0f0f] border border-[#2a2a2a] text-zinc-400 py-2 rounded-lg text-sm">Cancel</button>
               </div>
             </div>
@@ -158,8 +158,8 @@ export default function SourcesPage() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <button onClick={() => startEdit(src)} className="text-zinc-400 hover:text-violet-400" title="Edit account handle"><Edit3 size={14} /></button>
-                    <button onClick={() => syncMutation.mutate(src.id)} className="text-zinc-400 hover:text-violet-400" title="Sync"><RefreshCw size={14} /></button>
+                    <button onClick={() => startEdit(src)} className="text-zinc-400 hover:text-indigo-400" title="Edit account handle"><Edit3 size={14} /></button>
+                    <button onClick={() => syncMutation.mutate(src.id)} className="text-zinc-400 hover:text-indigo-400" title="Sync"><RefreshCw size={14} /></button>
                     <button onClick={() => { if (window.confirm(`Delete source "${src.accountHandle || src.accountUrl}"?`)) deleteMutation.mutate(src.id); }} className="text-zinc-500 hover:text-red-400" title="Delete"><Trash2 size={14} /></button>
                   </div>
                 </td>

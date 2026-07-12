@@ -101,7 +101,7 @@ export default function NotificationsPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-white">Notifications</h1>
           {unreadCount > 0 && (
-            <span className="bg-violet-500/20 text-violet-400 text-xs font-medium px-2 py-0.5 rounded-full">
+            <span className="bg-indigo-500/20 text-indigo-400 text-xs font-medium px-2 py-0.5 rounded-full">
               {unreadCount} unread
             </span>
           )}
@@ -112,7 +112,7 @@ export default function NotificationsPage() {
               onClick={() => setActiveTab("notifications")}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === "notifications"
-                  ? "bg-violet-500/10 text-violet-400"
+                  ? "bg-indigo-500/10 text-indigo-400"
                   : "text-zinc-500 hover:text-white"
               }`}
             >
@@ -123,7 +123,7 @@ export default function NotificationsPage() {
               onClick={() => setActiveTab("preferences")}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === "preferences"
-                  ? "bg-violet-500/10 text-violet-400"
+                  ? "bg-indigo-500/10 text-indigo-400"
                   : "text-zinc-500 hover:text-white"
               }`}
             >
@@ -134,7 +134,7 @@ export default function NotificationsPage() {
           {activeTab === "notifications" && unreadCount > 0 && (
             <button
               onClick={() => markAllReadMutation.mutate()}
-              className="text-xs text-violet-400 hover:text-violet-300 px-3 py-1.5"
+              className="text-xs text-indigo-400 hover:text-indigo-300 px-3 py-1.5"
             >
               Mark all read
             </button>
@@ -158,7 +158,7 @@ export default function NotificationsPage() {
                 <div
                   key={n.id}
                   className={`px-4 py-3.5 flex items-start gap-3 hover:bg-white/[0.02] transition-colors ${
-                    !n.isRead ? "bg-violet-500/5" : ""
+                    !n.isRead ? "bg-indigo-500/5" : ""
                   }`}
                 >
                   <span className="text-lg mt-0.5">{NOTIFICATION_ICONS[n.type] || "\uD83D\uDD14"}</span>
@@ -172,7 +172,7 @@ export default function NotificationsPage() {
                     {!n.isRead && (
                       <button
                         onClick={() => markReadMutation.mutate(n.id)}
-                        className="text-zinc-600 hover:text-violet-400 p-1"
+                        className="text-zinc-600 hover:text-indigo-400 p-1"
                         title="Mark as read"
                       >
                         <Check size={14} />
@@ -209,7 +209,7 @@ export default function NotificationsPage() {
                     checked={prefs?.[opt.key] ?? true}
                     onChange={() => handleTogglePref(opt.key)}
                   />
-                  <div className="w-9 h-5 bg-[#0f0f0f] peer-checked:bg-violet-600 rounded-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+                  <div className="w-9 h-5 bg-[#0f0f0f] peer-checked:bg-indigo-600 rounded-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
                 </label>
               </div>
             ))}

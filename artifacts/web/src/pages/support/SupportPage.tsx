@@ -39,8 +39,8 @@ export default function SupportPage() {
             if (c.label === "Email Us") window.location.href = "mailto:support@viralflows.ai";
             else if (c.label === "Community") window.open("https://discord.gg/viralflows", "_blank");
             else window.open("https://github.com/viralflows/docs", "_blank");
-          }} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 text-center hover:border-violet-500/30 transition-colors cursor-pointer">
-            <c.icon size={24} className="text-violet-400 mx-auto mb-2" />
+          }} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 text-center hover:border-indigo-500/30 transition-colors cursor-pointer">
+            <c.icon size={24} className="text-indigo-400 mx-auto mb-2" />
             <h3 className="text-white font-medium text-sm">{c.label}</h3>
             <p className="text-xs text-zinc-500 mt-1">{c.desc}</p>
           </div>
@@ -70,7 +70,7 @@ export default function SupportPage() {
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5">
         <h3 className="text-white font-semibold mb-4">Send Us a Message</h3>
         <textarea className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 resize-none h-24" placeholder="Describe your issue..." value={message} onChange={(e) => setMessage(e.target.value)} />
-        <button onClick={sendMessage} className="mt-2 bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+        <button onClick={sendMessage} className="mt-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
           {sent ? <Check size={14} /> : <Send size={14} />}
           {sent ? "Sent!" : "Send Message"}
         </button>

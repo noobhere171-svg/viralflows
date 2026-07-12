@@ -63,7 +63,7 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white">Settings</h1>
         <button onClick={saveSettings} disabled={saving}
-          className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50">
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50">
           {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : savedMsg ? "Saved!" : "Save Settings"}
         </button>
       </div>
@@ -72,7 +72,7 @@ export default function SettingsPage() {
         {sections.map((sec) => (
           <div key={sec.title} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5">
             <div className="flex items-center gap-2 mb-4">
-              <sec.icon size={16} className="text-violet-400" />
+              <sec.icon size={16} className="text-indigo-400" />
               <h3 className="text-white font-semibold text-sm">{sec.title}</h3>
             </div>
             <div className="space-y-3">

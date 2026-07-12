@@ -167,7 +167,7 @@ function OverviewTab({ data, channels }: { data?: AnalyticsMetrics; channels?: A
   const metrics = [
     { label: "Total Views", value: data.totalViews, change: data.viewsChange, icon: Eye, color: "text-blue-400" },
     { label: "Total Likes", value: data.totalLikes, change: data.likesChange, icon: ThumbsUp, color: "text-green-400" },
-    { label: "Comments", value: data.totalComments, icon: MessageSquare, color: "text-violet-400" },
+    { label: "Comments", value: data.totalComments, icon: MessageSquare, color: "text-indigo-400" },
     { label: "Subs Gained", value: `+${data.subsGained}`, icon: TrendingUp, color: "text-amber-400" },
     { label: "Uploads", value: data.totalUploads, icon: Upload, color: "text-cyan-400" },
     { label: "© Issues", value: data.copyrightIssues, icon: ShieldAlert, color: "text-rose-400" },

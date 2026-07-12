@@ -14,8 +14,8 @@ export default function ManagePage() {
           { icon: AlertTriangle, label: "Alerts", count: 0, desc: "Quota warnings, auth failures, and system notifications", route: "/notifications" },
           { icon: RefreshCw, label: "Sync Status", count: 0, desc: "Source sync status and last sync timestamps", route: "/sources" },
         ].map((item) => (
-          <button key={item.label} onClick={() => navigate(item.route)} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 text-left hover:border-violet-500/30 transition-colors">
-            <item.icon size={20} className="text-violet-400 mb-3" />
+          <button key={item.label} onClick={() => navigate(item.route)} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 text-left hover:border-indigo-500/30 transition-colors">
+            <item.icon size={20} className="text-indigo-400 mb-3" />
             <h3 className="text-white font-medium text-sm mb-1">{item.label}</h3>
             <p className="text-xs text-zinc-500 mb-2">{item.desc}</p>
             <span className="text-sm font-bold text-white">{item.count}</span>

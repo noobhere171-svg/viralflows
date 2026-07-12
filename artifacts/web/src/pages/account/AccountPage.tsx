@@ -32,7 +32,7 @@ export default function AccountPage() {
     setSaving(false);
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin text-violet-500" size={32} /></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="animate-spin text-indigo-500" size={32} /></div>;
 
   return (
     <div>
@@ -41,8 +41,8 @@ export default function AccountPage() {
       <div className="max-w-lg">
         <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-14 h-14 rounded-full bg-violet-500/10 flex items-center justify-center">
-              <User size={24} className="text-violet-400" />
+            <div className="w-14 h-14 rounded-full bg-indigo-500/10 flex items-center justify-center">
+              <User size={24} className="text-indigo-400" />
             </div>
             <div>
               <h3 className="text-white font-medium">Profile</h3>
@@ -67,7 +67,7 @@ export default function AccountPage() {
               <input className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg px-3 py-2 text-sm text-zinc-500 cursor-not-allowed" value={profile.country} disabled />
             </div>
             <button onClick={handleSave} disabled={saving}
-              className="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
               {saving ? <><Loader2 size={14} className="animate-spin" /> Saving...</> : <><Save size={14} /> {saved ? "Saved!" : "Save Changes"}</>}
             </button>
           </div>

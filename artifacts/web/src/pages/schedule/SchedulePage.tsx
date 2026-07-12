@@ -123,9 +123,9 @@ export default function SchedulePage() {
     <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold text-white mb-6">Schedule</h1>
 
-      <div className="bg-[#1a1a1a] border border-violet-500/20 rounded-xl p-6 mb-6">
+      <div className="bg-[#1a1a1a] border border-indigo-500/20 rounded-xl p-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Globe size={18} className="text-violet-400" />
+          <Globe size={18} className="text-indigo-400" />
           <h2 className="text-lg font-semibold text-white">Global Schedule</h2>
           <p className="text-xs text-zinc-500 ml-2">Applies to all channels instantly. Use this to set the same schedule across all {filteredChannels.length} channels at once.</p>
         </div>
@@ -149,7 +149,7 @@ export default function SchedulePage() {
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <button key={n} onClick={() => setMaxVideos(n)}
-                  className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${maxVideos === n ? 'bg-violet-600 text-white' : 'bg-[#0f0f0f] text-zinc-400 border border-[#2a2a2a] hover:border-violet-500/30'}`}>
+                  className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${maxVideos === n ? 'bg-indigo-600 text-white' : 'bg-[#0f0f0f] text-zinc-400 border border-[#2a2a2a] hover:border-indigo-500/30'}`}>
                   {n}
                 </button>
               ))}
@@ -190,7 +190,7 @@ export default function SchedulePage() {
                 <option value="AM">AM</option>
                 <option value="PM">PM</option>
               </select>
-              <button onClick={addTime} className="bg-violet-600 hover:bg-violet-700 text-white px-2 py-1 rounded-lg text-xs font-medium">+ Add</button>
+              <button onClick={addTime} className="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded-lg text-xs font-medium">+ Add</button>
             </div>
           </div>
         </div>
@@ -209,7 +209,7 @@ export default function SchedulePage() {
         {uploadTimes.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-4">
             {uploadTimes.map((t) => (
-              <span key={t} className="bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+              <span key={t} className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs px-2 py-1 rounded-full flex items-center gap-1">
                 {formatTime12(t)}
                 <button onClick={() => removeTime(t)} className="hover:text-white ml-1">&times;</button>
               </span>
@@ -218,7 +218,7 @@ export default function SchedulePage() {
         )}
 
         <button onClick={() => applyGlobal.mutate()} disabled={applyGlobal.isPending || filteredChannels.length === 0}
-          className="bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
           {applyGlobal.isPending ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
           {selectedWorkspaceId
             ? `Apply to ${filteredChannels.length} in ${workspaces.find(w => w.id === selectedWorkspaceId)?.email || selectedWorkspaceId}`
@@ -297,7 +297,7 @@ export default function SchedulePage() {
                             <div className="flex gap-1">
                               {[1, 2, 3, 4, 5, 6].map(n => (
                                 <button key={n} onClick={() => setOverrideForm(f => ({ ...f, [ch.id]: { ...form, videosPerDay: n } }))}
-                                  className={`w-7 h-7 rounded text-xs font-medium ${form.videosPerDay === n ? 'bg-violet-600 text-white' : 'bg-[#0f0f0f] text-zinc-400 border border-[#2a2a2a]'}`}>
+                                  className={`w-7 h-7 rounded text-xs font-medium ${form.videosPerDay === n ? 'bg-indigo-600 text-white' : 'bg-[#0f0f0f] text-zinc-400 border border-[#2a2a2a]'}`}>
                                   {n}
                                 </button>
                               ))}
@@ -335,14 +335,14 @@ export default function SchedulePage() {
                                 className="bg-[#0f0f0f] border border-[#2a2a2a] rounded px-1 py-1 text-xs text-white w-10">
                                 <option value="AM">AM</option><option value="PM">PM</option>
                               </select>
-                              <button onClick={addOvTime} className="bg-violet-600 hover:bg-violet-700 text-white px-1.5 py-1 rounded text-[10px] font-medium">+</button>
+                              <button onClick={addOvTime} className="bg-indigo-600 hover:bg-indigo-700 text-white px-1.5 py-1 rounded text-[10px] font-medium">+</button>
                             </div>
                           </div>
                         </div>
                         {form.uploadTimes.length > 0 && (
                           <div className="flex flex-wrap gap-1 mb-3">
                             {form.uploadTimes.map(t => (
-                              <span key={t} className="bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                              <span key={t} className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-1">
                                 {formatTime12(t)}
                                 <button onClick={() => removeOvTime(t)} className="hover:text-white">&times;</button>
                               </span>
@@ -351,7 +351,7 @@ export default function SchedulePage() {
                         )}
                         <div className="flex gap-2">
                           <button onClick={saveOverride} disabled={updateOverride.isPending}
-                            className="text-xs bg-violet-600 hover:bg-violet-700 text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50">
+                            className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-medium disabled:opacity-50">
                             {updateOverride.isPending ? "Saving..." : "Save Override"}
                           </button>
                           <button onClick={() => deleteSchedule.mutate(s?.id || "")} className="text-xs text-red-400 hover:text-red-300 border border-red-400/20 px-3 py-1.5 rounded-lg">Remove Schedule</button>

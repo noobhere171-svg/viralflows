@@ -19,7 +19,7 @@ export default function PricingPage() {
     api.get("/billing/plans").then(setPlans).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-pulse text-violet-500 font-bold text-xl">Loading...</div></div>;
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-pulse text-indigo-500 font-bold text-xl">Loading...</div></div>;
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] py-16 px-4">
@@ -32,8 +32,8 @@ export default function PricingPage() {
           const features = (typeof plan.features === "string" ? JSON.parse(plan.features) : plan.features) || {};
           const isPopular = plan.name === "pro";
           return (
-            <div key={plan.id} className={`bg-[#1a1a1a] border rounded-xl p-6 flex flex-col ${isPopular ? "border-violet-500 ring-1 ring-violet-500/30" : "border-[#2a2a2a]"}`}>
-              {isPopular && <div className="text-xs text-violet-400 font-semibold mb-2 uppercase">Most Popular</div>}
+            <div key={plan.id} className={`bg-[#1a1a1a] border rounded-xl p-6 flex flex-col ${isPopular ? "border-indigo-500 ring-1 ring-indigo-500/30" : "border-[#2a2a2a]"}`}>
+              {isPopular && <div className="text-xs text-indigo-400 font-semibold mb-2 uppercase">Most Popular</div>}
               <h3 className="text-white font-semibold text-xl mb-1">{plan.displayName}</h3>
               <div className="text-4xl font-bold text-white mb-6">
                 {plan.price === 0 ? "Free" : `${plan.price.toLocaleString()}`}
@@ -47,7 +47,7 @@ export default function PricingPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => navigate("/register")} className={`w-full mt-6 py-3 rounded-lg text-sm font-semibold ${isPopular ? "bg-violet-600 text-white hover:bg-violet-700" : "bg-[#0f0f0f] border border-[#2a2a2a] text-white hover:bg-white/5"}`}>
+              <button onClick={() => navigate("/register")} className={`w-full mt-6 py-3 rounded-lg text-sm font-semibold ${isPopular ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-[#0f0f0f] border border-[#2a2a2a] text-white hover:bg-white/5"}`}>
                 Get Started
               </button>
             </div>
