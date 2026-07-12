@@ -37,6 +37,7 @@ app.use(helmet({
 }));
 app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   credentials: true,
 }));
 app.use(morgan("dev"));

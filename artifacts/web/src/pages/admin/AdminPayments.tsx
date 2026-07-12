@@ -22,7 +22,7 @@ export default function AdminPayments() {
     const next = !autoApprove;
     setAutoApprove(next);
     try {
-      await api.patch("/admin/settings", { key: "auto_approve_upgrades", value: next.toString() });
+      await api.post("/admin/settings", { key: "auto_approve_upgrades", value: next.toString() });
     } catch (err) { console.error("Failed to toggle auto-approve", err); setAutoApprove(!next); }
   };
 
