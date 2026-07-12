@@ -23,7 +23,7 @@ export default function AdminPayments() {
     setAutoApprove(next);
     try {
       await api.patch("/admin/settings", { key: "auto_approve_upgrades", value: next.toString() });
-    } catch { setAutoApprove(!next); }
+    } catch (err) { console.error("Failed to toggle auto-approve", err); setAutoApprove(!next); }
   };
 
   const load = () => {
@@ -31,7 +31,8 @@ export default function AdminPayments() {
     api.get(`/admin/payments?status=${tab}`).then(setPayments).catch(() => {}).finally(() => setLoading(false));
   };
 
-  useEffect(() => { loadSettings(); load(); }, [tab]);
+  useEffect(() => { loadSettings(); }, []);
+  useEffect(() => { load(); }, [tab]);
 
   const handleApprove = async (id: string) => {
     try {

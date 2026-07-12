@@ -45,8 +45,14 @@ export default function AdminProxies() {
   };
 
   const handleToggleOp = async (id: string, field: string, currentValue: boolean) => {
-    await api.patch(`/admin/proxies/${id}`, { [field]: !currentValue });
-    setProxies((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: !currentValue } : p)));
+    const next = !currentValue;
+    setProxies((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: next } : p)));
+    try {
+      await api.patch(`/admin/proxies/${id}`, { [field]: next });
+    } catch (err) {
+      console.error("Failed to toggle", field, err);
+      setProxies((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: currentValue } : p)));
+    }
   };
 
   return (
