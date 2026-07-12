@@ -367,9 +367,10 @@ router.post("/payments/:id/reject", async (req: AuthRequest, res) => {
 // ─── Admin Settings ───
 router.get("/settings", async (_req: AuthRequest, res) => {
   try {
-    const rows = await db.execute(sql`SELECT key, value, updated_at FROM admin_settings`);
+    const result = await db.execute(sql`SELECT key, value, updated_at FROM admin_settings`);
+    const rows: any[] = (result as any).rows || [];
     const obj: Record<string, string> = {};
-    for (const r of rows.rows || []) { obj[(r as any).key] = (r as any).value; }
+    for (const r of rows) { obj[r.key] = r.value; }
     res.json(obj);
   } catch (err: any) { res.status(500).json({ error: err.message }); }
 });
