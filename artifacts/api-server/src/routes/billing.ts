@@ -92,7 +92,7 @@ router.post("/upload-screenshot", upload.single("screenshot"), (req: AuthRequest
 const autoApproveIfEnabled = async (userId: string, requestedPlan: string, paymentId?: string) => {
   try {
     const [row] = await db.execute(sql`SELECT value FROM admin_settings WHERE key = 'auto_approve_upgrades'`);
-    if ((row as any)?.rows?.[0]?.value !== "true") return false;
+    if ((row as any)?.value !== "true") return false;
 
     const [plan] = await db.select().from(plans).where(eq(plans.name, requestedPlan));
     if (!plan) return false;
