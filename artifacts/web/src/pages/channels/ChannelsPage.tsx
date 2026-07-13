@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Search, ExternalLink, ChevronDown, ChevronRight, Clock, X, Upload, Copy, Check, Settings } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 import { getStatusColor, formatRelativeTime } from "../../lib/utils";
 import type { Channel, Source, Workspace, Schedule } from "../../types";
 
@@ -239,6 +240,7 @@ function AutoRefillModal({
 
 export default function ChannelsPage() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState("");
   const [wsFilter, setWsFilter] = useState("all");
@@ -580,7 +582,7 @@ export default function ChannelsPage() {
                       ) : (
                         ch.authStatus !== "authorized" && <span className="text-xs text-zinc-600">Assign GCP first</span>
                       )}
-                      <button onClick={() => { if (window.confirm(`Delete channel "${ch.channelName}"?`)) deleteMutation.mutate(ch.id); }} className="text-zinc-600 hover:text-red-400 p-1"><Trash2 size={12} /></button>
+                      <button onClick={async () => { const ok = await confirm({ title: "Delete Channel", message: `Delete channel "${ch.channelName}"?`, variant: "danger" }); if (ok) deleteMutation.mutate(ch.id); }} className="text-zinc-600 hover:text-red-400 p-1"><Trash2 size={12} /></button>
                     </div>
                   </td>
                 </tr>

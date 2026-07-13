@@ -36,8 +36,8 @@ export default function PricingPage() {
               {isPopular && <div className="text-xs text-indigo-400 font-semibold mb-2 uppercase">Most Popular</div>}
               <h3 className="text-white font-semibold text-xl mb-1">{plan.displayName}</h3>
               <div className="text-4xl font-bold text-white mb-6">
-                {plan.price === 0 ? "Free" : `${plan.price.toLocaleString()}`}
-                {plan.price > 0 && <span className="text-sm text-zinc-400 font-normal"> PKR/{plan.billingPeriod}</span>}
+                {plan.price === 0 ? "Free" : `${plan.currency === "USD" ? "$" : ""}${plan.price.toLocaleString()}${plan.currency !== "USD" ? " PKR" : ""}`}
+                {plan.price > 0 && <span className="text-sm text-zinc-400 font-normal">/{plan.billingPeriod}</span>}
               </div>
               <div className="space-y-3 flex-1 text-sm">
                 {Object.entries(features).map(([key, val]) => (

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, RefreshCw, X, Edit3 } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 import type { Source, Channel } from "../../types";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -20,6 +21,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function SourcesPage() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editHandle, setEditHandle] = useState("");
@@ -160,7 +162,7 @@ export default function SourcesPage() {
                   <div className="flex items-center gap-2">
                     <button onClick={() => startEdit(src)} className="text-zinc-400 hover:text-indigo-400" title="Edit account handle"><Edit3 size={14} /></button>
                     <button onClick={() => syncMutation.mutate(src.id)} className="text-zinc-400 hover:text-indigo-400" title="Sync"><RefreshCw size={14} /></button>
-                    <button onClick={() => { if (window.confirm(`Delete source "${src.accountHandle || src.accountUrl}"?`)) deleteMutation.mutate(src.id); }} className="text-zinc-500 hover:text-red-400" title="Delete"><Trash2 size={14} /></button>
+                    <button onClick={async () => { const ok = await confirm({ title: "Delete Source", message: `Delete source "${src.accountHandle || src.accountUrl}"?`, variant: "danger" }); if (ok) deleteMutation.mutate(src.id); }} className="text-zinc-500 hover:text-red-400" title="Delete"><Trash2 size={14} /></button>
                   </div>
                 </td>
               </tr>

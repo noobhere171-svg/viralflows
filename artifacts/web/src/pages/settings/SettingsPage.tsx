@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Palette, Globe, Database, Download, Shield, Loader2 } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 
 const STORAGE_KEY = "vf_settings";
 
@@ -12,6 +13,7 @@ function loadSettings() {
 }
 
 export default function SettingsPage() {
+  const confirm = useConfirm();
   const saved = loadSettings();
   const [theme, setTheme] = useState(saved.theme || "dark");
   const [lang, setLang] = useState(saved.lang || "en");
@@ -53,7 +55,7 @@ export default function SettingsPage() {
       icon: Shield, title: "Privacy & Data",
       items: [
         { label: "Export Data", control: <button onClick={async () => { const data = await api.get("/account/export").catch(() => null); if (data) { const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'viralflows-export.json'; a.click(); } }} className="text-xs bg-[#0f0f0f] border border-[#2a2a2a] text-zinc-300 px-2 py-1 rounded hover:border-zinc-600"><Download size={12} /></button> },
-        { label: "Delete Account", control: <button onClick={async () => { if (confirm('Are you sure you want to delete your account? This cannot be undone.')) { await api.delete("/account").catch(() => {}); window.location.href = '/'; } }} className="text-xs text-red-400 hover:text-red-300">Delete</button> },
+        { label: "Delete Account", control: <button onClick={async () => { const ok = await confirm({ title: "Delete Account", message: "Are you sure you want to delete your account? This cannot be undone.", variant: "danger" }); if (ok) { await api.delete("/account").catch(() => {}); window.location.href = '/'; } }} className="text-xs text-red-400 hover:text-red-300">Delete</button> },
       ],
     },
   ];

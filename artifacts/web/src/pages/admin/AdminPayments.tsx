@@ -98,7 +98,7 @@ export default function AdminPayments() {
                     <span className="text-zinc-500 text-xs">{new Date(p.createdAt).toLocaleString()}</span>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
-                    <span className="text-zinc-400">Amount: <span className="text-white">{p.amount?.toLocaleString()} PKR</span></span>
+                    <span className="text-zinc-400">Amount: <span className="text-white">{p.currency === "USD" ? "$" : ""}{p.amount?.toLocaleString()}{p.currency !== "USD" ? " PKR" : ""}</span></span>
                     {p.transactionId && <span className="text-zinc-400">TXN: <span className="text-white">{p.transactionId}</span></span>}
                   </div>
                   {p.screenshotUrl && (

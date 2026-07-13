@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Edit2, Trash2, X, Lock, Unlock, UserPlus } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<any[]>([]);
@@ -13,6 +14,7 @@ export default function AdminUsers() {
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
   const [newAdmin, setNewAdmin] = useState({ email: "", password: "", name: "" });
   const [loading, setLoading] = useState(true);
+  const confirm = useConfirm();
 
   const fetchUsers = () => {
     setLoading(true);
@@ -32,12 +34,14 @@ export default function AdminUsers() {
     fetchUsers();
   };
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this user?")) return;
+    const ok = await confirm({ title: "Delete User", message: "Delete this user?", variant: "danger" });
+    if (!ok) return;
     await api.delete(`/admin/users/${id}`);
     fetchUsers();
   };
   const handleLock = async (id: string) => {
-    if (!confirm("Lock this user? They won't be able to log in.")) return;
+    const ok = await confirm({ title: "Lock User", message: "Lock this user? They won't be able to log in.", variant: "danger" });
+    if (!ok) return;
     await api.post(`/admin/users/${id}/lock`);
     fetchUsers();
   };

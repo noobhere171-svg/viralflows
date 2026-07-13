@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 
 export default function AdminProxies() {
   const [proxies, setProxies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const confirm = useConfirm();
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [form, setForm] = useState({ ipAddress: "", port: "", protocol: "http", username: "", passwordEncrypted: "", assignedToPlan: "all", maxConcurrentUsers: 5, country: "", useForFetch: true, useForDownload: true, useForUpload: false });
@@ -34,7 +36,8 @@ export default function AdminProxies() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete proxy?")) return;
+    const ok = await confirm({ title: "Delete Proxy", message: "Delete proxy?", variant: "danger" });
+    if (!ok) return;
     await api.delete(`/admin/proxies/${id}`);
     fetchProxies();
   };

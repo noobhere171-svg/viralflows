@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Play, Trash2, Upload, Sparkles, X, Search, Download, Eye, Settings } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 import { getStatusColor, formatRelativeTime } from "../../lib/utils";
 import type { VideoQueueItem, Channel, Source } from "../../types";
 
@@ -300,6 +301,7 @@ function AutoRefillModal({ sources, channels: allCh, workspaces, onClose }: { so
 
 export default function VideoQueuePage() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [filterTab, setFilterTab] = useState("all");
   const [channelFilter, setChannelFilter] = useState("all");
   const [searchQ, setSearchQ] = useState("");
@@ -492,36 +494,35 @@ export default function VideoQueuePage() {
                         <>
                           <button onClick={() => setSeoVideo(video)} className="text-xs bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded hover:bg-indigo-500/20">Source</button>
                           <button onClick={() => uploadMutation.mutate(video.id)} className="text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded hover:bg-green-500/20">Upload</button>
-                          <button onClick={() => { if (window.confirm("Skip this video?")) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-2 py-0.5 rounded hover:bg-red-500/20">Skip</button>
-                          <button onClick={() => { if (window.confirm("Delete this video?")) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
+                          <button onClick={async () => { const ok = await confirm({ title: "Skip Video", message: "Skip this video?" }); if (ok) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-2 py-0.5 rounded hover:bg-red-500/20">Skip</button>
+                          <button onClick={async () => { const ok = await confirm({ title: "Delete Video", message: "Delete this video?", variant: "danger" }); if (ok) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
                         </>
                       )}
                       {isUploaded && (
                         <>
                           <span className="text-xs text-green-500">Uploaded ✓</span>
-                          <button onClick={() => { if (window.confirm("Remove from queue?")) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
-                          <button onClick={() => {
-                            if (window.confirm("Are you sure? This will permanently delete the video from YouTube.")) {
-                              ytDeleteMutation.mutate(video.id);
-                            }
+                          <button onClick={async () => { const ok = await confirm({ title: "Remove from Queue", message: "Remove this video from queue?" }); if (ok) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
+                          <button onClick={async () => {
+                            const ok = await confirm({ title: "Delete from YouTube", message: "Are you sure? This will permanently delete the video from YouTube.", variant: "danger" });
+                            if (ok) ytDeleteMutation.mutate(video.id);
                           }} className="text-xs bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded hover:bg-orange-500/20">YT Delete</button>
                         </>
                       )}
                       {isFailed && (
                         <>
                           <button onClick={() => retryMutation.mutate(video.id)} className="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded hover:bg-amber-500/20">Retry</button>
-                          <button onClick={() => { if (window.confirm("Delete this failed video?")) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
+                          <button onClick={async () => { const ok = await confirm({ title: "Delete Failed Video", message: "Delete this failed video?", variant: "danger" }); if (ok) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
                         </>
                       )}
                       {isBlocked && (
                         <>
                           <span className="text-xs text-red-400 font-medium">Blocked (GCP)</span>
                           <button onClick={() => retryMutation.mutate(video.id)} className="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded hover:bg-amber-500/20">Retry</button>
-                          <button onClick={() => { if (window.confirm("Delete this blocked video?")) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
+                          <button onClick={async () => { const ok = await confirm({ title: "Delete Blocked Video", message: "Delete this blocked video?", variant: "danger" }); if (ok) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
                         </>
                       )}
                       {!isUploaded && !isFailed && !isPending && !isBlocked && (
-                        <button onClick={() => { if (window.confirm("Delete this video?")) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
+                        <button onClick={async () => { const ok = await confirm({ title: "Delete Video", message: "Delete this video?", variant: "danger" }); if (ok) deleteMutation.mutate(video.id); }} className="text-xs bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded hover:bg-red-500/20"><Trash2 size={12} /></button>
                       )}
                     </div>
                   </td>

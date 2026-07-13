@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, Trash2, Settings } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 import type { Notification } from "../../types";
 
 const NOTIFICATION_ICONS: Record<string, string> = {
@@ -43,6 +44,7 @@ const PREF_OPTIONS = [
 
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState<"notifications" | "preferences">("notifications");
 
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
@@ -179,8 +181,8 @@ export default function NotificationsPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => {
-                        if (window.confirm("Delete this notification?")) deleteMutation.mutate(n.id);
+                      onClick={async () => {
+                        const ok = await confirm({ title: "Delete Notification", message: "Delete this notification?", variant: "danger" }); if (ok) deleteMutation.mutate(n.id);
                       }}
                       className="text-zinc-600 hover:text-red-400 p-1"
                       title="Delete"

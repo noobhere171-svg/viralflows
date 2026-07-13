@@ -138,8 +138,8 @@ export default function SelectPlanPage() {
                     <div className="text-3xl font-bold text-white">Free</div>
                   ) : (
                     <div className="text-3xl font-bold text-white">
-                      {plan.price?.toLocaleString()}
-                      <span className="text-sm text-zinc-400 font-normal ml-1">PKR/{plan.billingPeriod || "yearly"}</span>
+                      {plan.currency === "USD" ? "$" : ""}{plan.price?.toLocaleString()}{plan.currency !== "USD" ? " PKR" : ""}
+                      <span className="text-sm text-zinc-400 font-normal ml-1">/{plan.billingPeriod || "yearly"}</span>
                     </div>
                   )}
                 </div>

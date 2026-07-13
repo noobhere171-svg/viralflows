@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Globe, Upload, X, Check, RefreshCw, Search, Settings2, Copy, AlertTriangle, HelpCircle } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 import type { Workspace, Channel, Schedule } from "../../types";
 
 export default function WorkspacesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: "", gcpProjectId: "", gcpEmail: "" });
   const [uploadingId, setUploadingId] = useState<string | null>(null);
@@ -157,7 +159,8 @@ export default function WorkspacesPage() {
   };
 
   const handleDeleteGcpCred = async (wsId: string, credId: string, name: string) => {
-    if (!window.confirm(`Delete "${name}"?`)) return;
+    const ok = await confirm({ title: "Delete Credential", message: `Delete "${name}"?`, variant: "danger" });
+    if (!ok) return;
     try {
       await api.delete(`/workspaces/${wsId}/gcp-credentials/${credId}`);
       refreshGcpData();
@@ -327,7 +330,8 @@ export default function WorkspacesPage() {
                         <div className="flex items-center gap-1">
                           {(isBlocked || isExpired) && (
                             <button onClick={async () => {
-                              if (!window.confirm(`Expire GCP "${cred.name}"? All channels using it will be de-authorized.`)) return;
+                              const ok2 = await confirm({ title: "Expire GCP", message: `Expire GCP "${cred.name}"? All channels using it will be de-authorized.`, variant: "danger" });
+                              if (!ok2) return;
                               try {
                                 await api.post(`/workspaces/${ws.id}/expire-gcp/${cred.id}`);
                                 refreshGcpData();
@@ -423,7 +427,8 @@ export default function WorkspacesPage() {
                                 try {
                                   const r = await api.get<any>(`/channels/${ch.id}/authorize`);
                                   if (r.conflictWarning) {
-                                    if (!window.confirm(`${r.conflictWarning}\n\nProceed with authorization?`)) return;
+                                    const ok3 = await confirm({ title: "Authorization Warning", message: `${r.conflictWarning}\n\nProceed with authorization?` });
+                                    if (!ok3) return;
                                   }
                                   if (r.redirectUrl) window.open(r.redirectUrl, '_blank', 'width=600,height=700');
                                 } catch (err: any) { fb("error", err?.message || "Auth failed"); }

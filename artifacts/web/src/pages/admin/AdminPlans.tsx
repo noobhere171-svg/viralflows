@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, X, Save } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 
 const methodFields: Record<string, { key: string; label: string }[]> = {
   "Bank Transfer": [
@@ -34,6 +35,7 @@ export default function AdminPlans() {
   const [featureDefs, setFeatureDefs] = useState<any[]>([]);
   const [editing, setEditing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const confirm = useConfirm();
 
   const fetchData = async () => {
     setLoading(true);
@@ -69,6 +71,7 @@ export default function AdminPlans() {
     const payload: any = {
       displayName: editing.displayName,
       price: editing.price,
+      currency: editing.currency,
       billingPeriod: editing.billingPeriod,
       billingDays: editing.billingDays,
       features: editing.features,
@@ -89,7 +92,8 @@ export default function AdminPlans() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this plan?")) return;
+    const ok = await confirm({ title: "Delete Plan", message: "Delete this plan?", variant: "danger" });
+    if (!ok) return;
     await api.delete(`/admin/plans/${id}`);
     fetchData();
   };
@@ -154,7 +158,7 @@ export default function AdminPlans() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-white">Plan Management</h1>
         <button onClick={() => setEditing({
-          name: "", displayName: "", price: 0, billingPeriod: "yearly", billingDays: 365,
+          name: "", displayName: "", price: 0, currency: "PKR", billingPeriod: "yearly", billingDays: 365,
           features: getDefaultFeatures(),
           featureLabels: getDefaultLabels(),
           sortOrder: plans.length, isActive: true,
@@ -190,7 +194,7 @@ export default function AdminPlans() {
                 </div>
               </div>
               <div className="text-3xl font-bold text-white mb-3">
-                {plan.price === 0 ? "Free" : `${plan.price.toLocaleString()} PKR`}
+                {plan.price === 0 ? "Free" : `${plan.currency === "USD" ? "$" : ""}${plan.price.toLocaleString()}${plan.currency !== "USD" ? " PKR" : ""}`}
                 {plan.price > 0 && <span className="text-sm text-zinc-400 font-normal">/{plan.billingPeriod}</span>}
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
@@ -234,11 +238,19 @@ export default function AdminPlans() {
                     className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" />
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 <div>
-                  <label className="text-zinc-400 text-sm">Price (PKR)</label>
+                  <label className="text-zinc-400 text-sm">Price</label>
                   <input type="number" value={editing.price} onChange={(e) => setEditing({ ...editing, price: parseInt(e.target.value) || 0 })}
                     className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm" />
+                </div>
+                <div>
+                  <label className="text-zinc-400 text-sm">Currency</label>
+                  <select value={editing.currency || "PKR"} onChange={(e) => setEditing({ ...editing, currency: e.target.value })}
+                    className="w-full mt-1 px-3 py-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg text-white text-sm">
+                    <option value="PKR">PKR</option>
+                    <option value="USD">USD ($)</option>
+                  </select>
                 </div>
                 <div>
                   <label className="text-zinc-400 text-sm">Billing Period</label>

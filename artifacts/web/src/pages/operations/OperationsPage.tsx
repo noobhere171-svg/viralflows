@@ -2,11 +2,13 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Clock, CheckCircle, AlertCircle, Loader2, Activity, RefreshCw, AlertTriangle, Youtube, ListVideo, BarChart3, Globe, Mail, ExternalLink, Trash2 } from "lucide-react";
 import api from "../../lib/api";
+import { useConfirm } from "../../components/ConfirmDialog";
 import { getStatusColor, formatRelativeTime } from "../../lib/utils";
 import type { Operation, Channel, Workspace } from "../../types";
 
 export default function OperationsPage() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [channelSearch, setChannelSearch] = useState("");
 
   const { data: operations = [] } = useQuery<Operation[]>({
@@ -400,7 +402,7 @@ export default function OperationsPage() {
                 <td className="px-4 py-3 text-sm text-zinc-500">{op.completedAt ? formatRelativeTime(op.completedAt) : "-"}</td>
                 <td className="px-4 py-3 text-sm text-red-400 max-w-[200px] truncate">{op.errorMessage || "-"}</td>
                 <td className="px-4 py-3">
-                  <button onClick={() => { if (window.confirm("Delete this operation?")) deleteOpMutation.mutate(op.id); }} className="text-zinc-600 hover:text-red-400 p-1"><Trash2 size={12} /></button>
+                  <button onClick={async () => { const ok = await confirm({ title: "Delete Operation", message: "Delete this operation?", variant: "danger" }); if (ok) deleteOpMutation.mutate(op.id); }} className="text-zinc-600 hover:text-red-400 p-1"><Trash2 size={12} /></button>
                 </td>
               </tr>
             ))}

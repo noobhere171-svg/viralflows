@@ -175,8 +175,8 @@ export default function BillingPage() {
             <div key={plan.id} className={`bg-[#1a1a1a] border rounded-xl p-5 flex flex-col ${isCurrent ? "border-indigo-500" : "border-[#2a2a2a]"}`}>
               <h3 className="text-white font-semibold text-lg mb-1">{plan.displayName}</h3>
               <div className="text-3xl font-bold text-white mb-4">
-                {plan.price === 0 ? "Free" : `${plan.price?.toLocaleString()}`}
-                {plan.price > 0 && <span className="text-sm text-zinc-400 font-normal"> PKR/{plan.billingPeriod}</span>}
+                {plan.price === 0 ? "Free" : `${plan.currency === "USD" ? "$" : ""}${plan.price?.toLocaleString()}${plan.currency !== "USD" ? " PKR" : ""}`}
+                {plan.price > 0 && <span className="text-sm text-zinc-400 font-normal">/{plan.billingPeriod}</span>}
               </div>
               <div className="space-y-2 flex-1 text-sm">
                 {Object.entries(features).slice(0, 8).map(([key, val]) => (
@@ -235,7 +235,7 @@ export default function BillingPage() {
                   ))}
                   <div className="flex justify-between border-t border-[#2a2a2a] pt-2 mt-2">
                     <span className="text-zinc-400 font-medium">Amount:</span>
-                    <span className="text-white font-bold">{selectedPlanData?.price?.toLocaleString()} PKR</span>
+                    <span className="text-white font-bold">{selectedPlanData?.currency === "USD" ? "$" : ""}{selectedPlanData?.price?.toLocaleString()}{selectedPlanData?.currency !== "USD" ? " PKR" : ""}</span>
                   </div>
                 </div>
               )}

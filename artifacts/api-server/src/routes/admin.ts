@@ -181,10 +181,11 @@ router.get("/plans", async (_req: AuthRequest, res) => {
 
 router.post("/plans", async (req: AuthRequest, res) => {
   try {
-    const { name, displayName, price, billingPeriod, features, sortOrder } = req.body;
+    const { name, displayName, price, currency, billingPeriod, features, sortOrder } = req.body;
     if (!name || !displayName) return res.status(400).json({ error: "name and displayName required" });
     const [created] = await db.insert(plans).values({
-      name, displayName, price: price || 0, billingPeriod: billingPeriod || "yearly",
+      name, displayName, price: price || 0, currency: currency || "PKR",
+      billingPeriod: billingPeriod || "yearly",
       features: features || {}, sortOrder: sortOrder || 0,
     }).returning();
     res.status(201).json(created);
@@ -193,7 +194,7 @@ router.post("/plans", async (req: AuthRequest, res) => {
 
 router.patch("/plans/:id", async (req: AuthRequest, res) => {
   try {
-    const ALLOWED = ["displayName", "price", "billingPeriod", "billingDays", "features", "featureLabels", "isActive", "sortOrder", "paymentMethods", "bankDetails"];
+    const ALLOWED = ["displayName", "price", "currency", "billingPeriod", "billingDays", "features", "featureLabels", "isActive", "sortOrder", "paymentMethods", "bankDetails"];
     const safe: Record<string, any> = {};
     for (const key of ALLOWED) { if (key in req.body) safe[key] = req.body[key]; }
     if (Object.keys(safe).length === 0) return res.status(400).json({ error: "No valid fields" });
@@ -361,7 +362,9 @@ router.get("/payments", async (req: AuthRequest, res) => {
       status: paymentScreenshots.status, adminNote: paymentScreenshots.adminNote,
       createdAt: paymentScreenshots.createdAt, userId: paymentScreenshots.userId,
       userEmail: users.email, userName: users.name,
+      currency: plans.currency,
     }).from(paymentScreenshots).leftJoin(users, eq(paymentScreenshots.userId, users.id))
+      .leftJoin(plans, eq(paymentScreenshots.requestedPlan, plans.name))
       .where(eq(paymentScreenshots.status, status)).orderBy(desc(paymentScreenshots.createdAt));
     res.json(list);
   } catch (err: any) { res.status(500).json({ error: err.message }); }

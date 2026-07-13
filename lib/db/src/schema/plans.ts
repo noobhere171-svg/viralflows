@@ -4,6 +4,7 @@ export const plans = pgTable("plans", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").unique().notNull(),
   displayName: text("display_name").notNull(),
+  currency: text("currency").default("PKR"),
   price: integer("price").default(0),
   billingPeriod: text("billing_period").default("yearly"),
   billingDays: integer("billing_days").default(365),
