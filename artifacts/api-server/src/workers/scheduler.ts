@@ -32,6 +32,10 @@ const REFILL_THROTTLE_MS = 10 * 60 * 1000; // 10 minutes
 const uploadQueue: { schedule: any; channel: any }[] = [];
 let processingQueue = false;
 
+const UPLOAD_CONCURRENCY = Number(process.env.UPLOAD_CONCURRENCY ?? 5);
+const CONTINUOUS_CONCURRENCY = Number(process.env.CONTINUOUS_CONCURRENCY ?? 3);
+const AUTO_REFILL_CONCURRENCY = Number(process.env.AUTO_REFILL_CONCURRENCY ?? 5);
+
 function sleep(ms: number) {
   return new Promise(r => setTimeout(r, ms));
 }
@@ -266,6 +270,12 @@ async function runCycle() {
   }
 
   try {
+    await processDueSchedules();
+  } catch (err) {
+    console.error(`[Scheduler] processDueSchedules error: ${getErrorMessage(err)}`);
+  }
+
+  try {
     await retryFailedItems();
   } catch (err) {
     console.error(`[Scheduler] retryFailedItems error: ${getErrorMessage(err)}`);
@@ -372,29 +382,34 @@ async function processDueSchedules() {
   }
 }
 
+async function processQueueItem(item: { schedule: any; channel: any }): Promise<void> {
+  try {
+    const [channel] = await db.select().from(channels).where(eq(channels.id, item.channel.id));
+    if (!channel || channel.authStatus !== "authorized") {
+      const now = Date.now();
+      const lastLog = lastAuthFailedLog[item.schedule.id] || 0;
+      if (now - lastLog > AUTH_FAILED_LOG_INTERVAL_MS) {
+        lastAuthFailedLog[item.schedule.id] = now;
+        console.warn(`[Scheduler] Queue item ${item.schedule.id}: auth changed to ${channel?.authStatus} — removed`);
+      }
+      await db.update(scheduledUploads).set({ lastRunAt: new Date() }).where(eq(scheduledUploads.id, item.schedule.id));
+      return;
+    }
+    await processSingleSchedule(item.schedule, channel);
+  } catch (err) {
+    console.error(`[Scheduler] Queue item error for ${item.channel.channelName}: ${getErrorMessage(err)}`);
+  }
+}
+
 async function processUploadQueue() {
   try {
     processingQueue = true;
-    console.log(`[Scheduler] Upload queue processor started (${uploadQueue.length} items)`);
+    console.log(`[Scheduler] Upload queue processor started (${uploadQueue.length} items, concurrency=${UPLOAD_CONCURRENCY})`);
 
     while (uploadQueue.length > 0) {
-      const item = uploadQueue.shift()!;
-      console.log(`[Scheduler] Processing queue item for ${item.channel.channelName} (${uploadQueue.length} remaining)`);
-
-      const [channel] = await db.select().from(channels).where(eq(channels.id, item.channel.id));
-      if (!channel || channel.authStatus !== "authorized") {
-        const now = Date.now();
-        const lastLog = lastAuthFailedLog[item.schedule.id] || 0;
-        if (now - lastLog > AUTH_FAILED_LOG_INTERVAL_MS) {
-          lastAuthFailedLog[item.schedule.id] = now;
-          console.warn(`[Scheduler] Queue item ${item.schedule.id}: auth changed to ${channel?.authStatus} — removed`);
-        }
-        await db.update(scheduledUploads).set({ lastRunAt: new Date() }).where(eq(scheduledUploads.id, item.schedule.id));
-        continue;
-      }
-
-      await processSingleSchedule(item.schedule, channel);
-
+      const batch = uploadQueue.splice(0, UPLOAD_CONCURRENCY);
+      console.log(`[Scheduler] Processing batch of ${batch.length} item(s) (${uploadQueue.length} remaining)`);
+      await Promise.all(batch.map(item => processQueueItem(item)));
       if (uploadQueue.length > 0) {
         await sleep(4000);
       }
@@ -596,9 +611,14 @@ async function processContinuousUploads() {
       .map(s => s.channelId).filter(Boolean)
   );
 
+  let activeCount = 0;
+  const started: Promise<void>[] = [];
+
   for (const channel of allChannels) {
+    if (activeCount >= CONTINUOUS_CONCURRENCY) break;
+    if (scheduledChannelIds.has(channel.id)) continue;
+
     try {
-      if (scheduledChannelIds.has(channel.id)) continue;
       const maxPerDay = await getMaxVideosPerDayForChannel(channel.id);
       const todayCount = await getTodayUploadCountByChannel(channel.id);
       if (todayCount >= maxPerDay) continue;
@@ -618,7 +638,6 @@ async function processContinuousUploads() {
       const queueItem = await findOldestPending(channel.id);
       if (!queueItem) continue;
 
-      // Dead-letter items with expired CDN URLs and no sourceVideoId
       if (queueItem.sourceUrl?.includes("tiktokcdn") && !queueItem.sourceVideoId) {
         await db.update(videoQueue).set({
           status: "dead_letter",
@@ -635,17 +654,28 @@ async function processContinuousUploads() {
         console.log(`[ContinuousUpload] Reclaimed stale lease on item ${lease.reclaimedItemId} for ${channel.channelName}`);
       }
 
-      console.log(`[ContinuousUpload] Uploading item ${queueItem.id} for ${channel.channelName}`);
-      const result = await runUploadPipeline({ queueItem, channel, context: "continuous" });
+      activeCount++;
+      console.log(`[ContinuousUpload] Starting upload item ${queueItem.id} for ${channel.channelName} (${activeCount}/${CONTINUOUS_CONCURRENCY})`);
 
-      if (result.success) {
-        console.log(`[ContinuousUpload] Success: item ${queueItem.id} for ${channel.channelName}`);
-      } else {
-        console.warn(`[ContinuousUpload] Failed: item ${queueItem.id} for ${channel.channelName}: ${getErrorMessage(result.error)}`);
-      }
+      const p = runUploadPipeline({ queueItem, channel, context: "continuous" })
+        .then(result => {
+          if (result.success) {
+            console.log(`[ContinuousUpload] Success: item ${queueItem.id} for ${channel.channelName}`);
+          } else {
+            console.warn(`[ContinuousUpload] Failed: item ${queueItem.id} for ${channel.channelName}: ${getErrorMessage(result.error)}`);
+          }
+        })
+        .catch(err => {
+          console.warn(`[ContinuousUpload] Error for ${channel.channelName}: ${getErrorMessage(err)}`);
+        });
+      started.push(p);
     } catch (err) {
       console.warn(`[ContinuousUpload] Error for ${channel.channelName}: ${getErrorMessage(err)}`);
     }
+  }
+
+  if (started.length > 0) {
+    console.log(`[ContinuousUpload] Started ${started.length} upload(s) in background (max concurrency: ${CONTINUOUS_CONCURRENCY})`);
   }
 }
 
@@ -868,28 +898,46 @@ export async function refillSourceToLimit(
   return { queued: inserted, pendingBefore: pendingCount, pendingAfter: totalAfter, exhausted: false, skipped: false };
 }
 
+async function processSingleRefill(src: typeof sources.$inferSelect): Promise<void> {
+  try {
+    const filter = (src.contentFilter as any) || {};
+    if (filter.autoRefillEnabled === false) return;
+
+    if (refillThrottle[src.id] && Date.now() < refillThrottle[src.id]) return;
+
+    const result = await refillSourceToLimit(src.id, { maxPerSource: 5, skipThrottle: false });
+
+    if (!result.skipped && result.queued > 0) {
+      console.log(`[AutoRefill] Source ${src.accountHandle || src.id}: queued ${result.queued} (pending ${result.pendingBefore}→${result.pendingAfter})`);
+    } else if (result.exhausted) {
+      console.warn(`[AutoRefill] Source ${src.accountHandle || src.id}: exhausted`);
+    }
+  } catch (srcErr: any) {
+    console.warn(`[AutoRefill] Source ${src.accountHandle || src.id} error: ${getErrorMessage(srcErr)}`);
+  }
+}
+
 async function processAutoRefill() {
   const allSources = await db.select().from(sources);
 
-  for (const src of allSources) {
-    try {
-      const filter = (src.contentFilter as any) || {};
-      if (filter.autoRefillEnabled === false) continue;
+  const eligible = allSources.filter(src => {
+    const filter = (src.contentFilter as any) || {};
+    return filter.autoRefillEnabled !== false;
+  });
 
-      if (refillThrottle[src.id] && Date.now() < refillThrottle[src.id]) continue;
+  if (eligible.length === 0) return;
 
-      const result = await refillSourceToLimit(src.id, { maxPerSource: 5, skipThrottle: false });
-
-      if (!result.skipped && result.queued > 0) {
-        console.log(`[AutoRefill] Source ${src.accountHandle || src.id}: queued ${result.queued} (pending ${result.pendingBefore}→${result.pendingAfter})`);
-      } else if (result.exhausted) {
-        console.warn(`[AutoRefill] Source ${src.accountHandle || src.id}: exhausted`);
-      }
-    } catch (srcErr: any) {
-      console.warn(`[AutoRefill] Source ${src.accountHandle || src.id} error: ${getErrorMessage(srcErr)}`);
+  let processedCount = 0;
+  for (let i = 0; i < eligible.length; i += AUTO_REFILL_CONCURRENCY) {
+    const batch = eligible.slice(i, i + AUTO_REFILL_CONCURRENCY);
+    await Promise.all(batch.map(src => processSingleRefill(src)));
+    processedCount += batch.length;
+    if (i + AUTO_REFILL_CONCURRENCY < eligible.length) {
+      await sleep(2000);
     }
-    await sleep(6000);
   }
+
+  console.log(`[AutoRefill] Processed ${processedCount}/${eligible.length} eligible sources`);
 }
 
 /**

@@ -82,6 +82,21 @@ import { sql } from "drizzle-orm";
   }
 })();
 
+// Migration 0008: Performance indexes for 1500-channel scale
+(async () => {
+  try {
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_vq_target_channel_status ON video_queue(target_channel_id, status);
+      CREATE INDEX IF NOT EXISTS idx_vq_source_status ON video_queue(source_id, status);
+      CREATE INDEX IF NOT EXISTS idx_ch_auth_status ON channels(auth_status);
+      CREATE INDEX IF NOT EXISTS idx_ch_gcp_id ON channels(gcp_credential_id);
+    `);
+    console.log("[DB] Migration 0008: performance indexes added");
+  } catch (err: any) {
+    console.error(`[DB] Migration 0008 failed: ${err?.message || err}`);
+  }
+})();
+
 startDbKeepalive();
 
 import { startScheduler } from "./workers/scheduler.js";
