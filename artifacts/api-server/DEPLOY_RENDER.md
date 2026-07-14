@@ -1,5 +1,8 @@
 # Render Deploy Guide
 
+> **Note:** `render.yaml` is already at the repo root with the correct config.
+> Just push to `main` and Render auto-deploys. No manual config needed.
+
 ## Step 1: GitHub repo push karo
 
 ```bash
@@ -22,9 +25,19 @@ git push -u origin main
 
 ## Step 3: Backend deploy (Web Service)
 
-1. Dashboard → **New +** → **Web Service**
-2. Connect your `viralflows` repo
-3. Fill this:
+Both ways work; pick one.
+
+### Option A: Auto-deploy via render.yaml (recommended)
+
+1. Dashboard → **New +** → **Blueprint** → Connect your `viralflows` repo
+2. The `render.yaml` at the repo root has all config pre-filled
+3. Add env vars from the table below in the Render dashboard
+4. Git push → auto-deploy ✅
+
+### Option B: Manual Web Service
+
+1. Dashboard → **New +** → **Web Service** → Connect your `viralflows` repo
+2. Fill this:
 
 | Field | Value |
 |-------|-------|
@@ -33,11 +46,11 @@ git push -u origin main
 | **Branch** | `main` |
 | **Root Directory** | `artifacts/api-server` |
 | **Runtime** | `Node` |
-| **Build Command** | `npm install && npx tsc` |
+| **Build Command** | `npm install -g pnpm && pnpm install && pnpm --filter @viralflows/api-server run build` |
 | **Start Command** | `node dist/artifacts/api-server/src/index.js` |
 | **Plan** | **Free** ($0/month) |
 
-4. **Environment Variables** — Add ALL of these:
+3. **Environment Variables** — Add ALL of these:
 
 ```
 NODE_ENV=production
@@ -63,7 +76,8 @@ YOUTUBE_CLIENT_SECRET=
 YOUTUBE_REDIRECT_URI=https://viralflows-api.onrender.com/api/connect/youtube/callback
 ```
 
-5. Click **Deploy Web Service** → wait 5-10 min for first build
+4. Click **Deploy Web Service** → wait 5-10 min for first build
+   (If using Option A / Blueprint, skip this — just push to main)
 
 ---
 
