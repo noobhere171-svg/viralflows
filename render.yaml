@@ -6,6 +6,7 @@ services:
     plan: free
     branch: main
     rootDir: artifacts/api-server
-    buildCommand: npm install -g pnpm && pnpm install && pnpm --filter @viralflows/api-server run build
+    buildCommand: npx -y pnpm@latest install && npx -y pnpm@latest --filter @viralflows/api-server run build
     startCommand: node dist/artifacts/api-server/src/index.js
     healthCheckPath: /api/health
+    autoDeploy: true

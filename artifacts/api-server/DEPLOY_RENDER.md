@@ -46,7 +46,7 @@ Both ways work; pick one.
 | **Branch** | `main` |
 | **Root Directory** | `artifacts/api-server` |
 | **Runtime** | `Node` |
-| **Build Command** | `npm install -g pnpm && pnpm install && pnpm --filter @viralflows/api-server run build` |
+| **Build Command** | `npx -y pnpm@latest install && npx -y pnpm@latest --filter @viralflows/api-server run build` |
 | **Start Command** | `node dist/artifacts/api-server/src/index.js` |
 | **Plan** | **Free** ($0/month) |
 
