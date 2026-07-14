@@ -70,11 +70,7 @@ export async function getSearchCount(userId: string): Promise<number> {
 }
 
 export async function checkQueueSizeLimit(userId: string): Promise<LimitCheck> {
-  return checkCountLimit(userId, "queueSize", async () => {
-    const result = await db.select({ count: count() }).from(videoQueue)
-      .where(sql`${videoQueue.userId} = ${userId} AND ${videoQueue.status} IN ('pending', 'processing')`);
-    return Number(result[0]?.count || 0);
-  });
+  return { allowed: true, current: 0, limit: -1 };
 }
 
 export async function checkDailyUploadsLimit(userId: string): Promise<LimitCheck> {
