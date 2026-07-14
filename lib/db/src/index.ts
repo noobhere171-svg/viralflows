@@ -7,7 +7,7 @@ const connectionString = process.env.DATABASE_URL!;
 const client = postgres(connectionString, {
   ssl: "require",
   connect_timeout: 60,
-  max: 3,
+  max: 10,
   max_lifetime: 60 * 5,
   idle_timeout: 60,
   keep_alive: 30,
